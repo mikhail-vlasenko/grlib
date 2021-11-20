@@ -2,6 +2,9 @@
 import cv2.cv2 as cv
 import mediapipe as mp
 import time
+from typing import NamedTuple
+
+import numpy as np
 
 
 class MediaPipe:
@@ -13,11 +16,20 @@ class MediaPipe:
         self.drawing_styles = mp.solutions.drawing_styles
         self.hands = mp.solutions.hands
 
-    def get_landmarks(self, img_path):
+    def process(self, img_path: str) -> NamedTuple:
         """
         performs landmark extraction
         :param img_path: path to image
-        :return: 21 3D landmarks (a complex object)
+        :return: recognition results
+        return type: NamedTuple with fields
+            multi_hand_landmarks - 21 hand landmarks where each landmark is composed of x, y and z.
+                x and y are normalized to [0.0, 1.0] by the image width and height respectively.
+                z represents the landmark depth with the depth at the wrist being the origin,
+                and the smaller the value the closer the landmark is to the camera.
+                The magnitude of z uses roughly the same scale as x.
+            multi_hand_world_landmarks - x, y and z - Real-world 3D coordinates in meters
+             with the origin at the hand’s approximate geometric center.
+            multi_handedness - 'left' or 'right', and the certainty that the hand is there
         """
         with self.hands.Hands(
                 static_image_mode=True,
@@ -29,14 +41,28 @@ class MediaPipe:
             results = hands.process(cv.cvtColor(image, cv.COLOR_BGR2RGB))
             return results
 
-    def show_landmarks(self, img_path, results):
+    def get_world_landmarks(self, img_path) -> np.array:
+        """
+        returns only landmarks for the first detected hand on 1 image
+        :param img_path:
+        :return:
+        """
+        point_array = []
+        landmarks = self.process(img_path).multi_hand_world_landmarks[0].landmark
+        for point in landmarks:
+            point_array.append([point.x, point.y, point.z])
+        return np.array(point_array)
+
+    def show_landmarks(self, img_path, results=None):
         """
         creates debug files and pyplots of landmarks
         saves files to /data/annotated/<timestamp>.png
         :param img_path: original image
-        :param results: landmarks
+        :param results: recognition output
         :return: None
         """
+        if results is None:
+            results = self.process(img_path)
         image = cv.flip(cv.imread(img_path), 1)
         # Print handedness and draw hand landmarks on the image.
         print('Handedness:', results.multi_handedness)
