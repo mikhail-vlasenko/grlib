@@ -1,24 +1,26 @@
 # cv2.cv2 because MediaPipe uses opencv-contrib
 import cv2.cv2 as cv
-import mediapipe as mp
+from mediapipe import solutions as mp
 import time
 from typing import NamedTuple
 
 import numpy as np
 
+from exceptions import NoHandDetectedException
+
 
 class MediaPipe:
     """
-    Class to interact with MediaPipe library
+    Class to interact with MediaPipe library.
     """
     def __init__(self):
-        self.drawing = mp.solutions.drawing_utils
-        self.drawing_styles = mp.solutions.drawing_styles
-        self.hands = mp.solutions.hands
+        self.drawing = mp.drawing_utils
+        self.drawing_styles = mp.drawing_styles
+        self.hands = mp.hands.Hands(static_image_mode=True, max_num_hands=1, min_detection_confidence=0.5)
 
     def process(self, img_path: str) -> NamedTuple:
         """
-        performs landmark extraction
+        Performs landmark extraction.
         :param img_path: path to image
         :return: recognition results
         return type: NamedTuple with fields
@@ -31,31 +33,33 @@ class MediaPipe:
              with the origin at the hand’s approximate geometric center.
             multi_handedness - 'left' or 'right', and the certainty that the hand is there
         """
-        with self.hands.Hands(
-                static_image_mode=True,
-                max_num_hands=1,
-                min_detection_confidence=0.5) as hands:
-            # Read an image, flip it around y-axis for correct handedness output.
-            image = cv.flip(cv.imread(img_path), 1)
-            # Convert the BGR image to RGB before processing.
-            results = hands.process(cv.cvtColor(image, cv.COLOR_BGR2RGB))
-            return results
+        # Read an image, flip it around y-axis for correct handedness output.
+        image = cv.flip(cv.imread(img_path), 1)
+        # Convert the BGR image to RGB before processing.
+        results = self.hands.process(cv.cvtColor(image, cv.COLOR_BGR2RGB))
+        return results
 
     def get_world_landmarks(self, img_path) -> np.array:
         """
-        returns only landmarks for the first detected hand on 1 image
+        Returns only landmarks for the first detected hand on 1 image.
         :param img_path:
         :return:
         """
         point_array = []
-        landmarks = self.process(img_path).multi_hand_world_landmarks[0].landmark
+        detected_hands = self.process(img_path).multi_hand_world_landmarks
+
+        if detected_hands is None:
+            raise NoHandDetectedException(f'No hand has been detected for {img_path}')
+
+        landmarks = detected_hands[0].landmark
+
         for point in landmarks:
             point_array.append([point.x, point.y, point.z])
         return np.array(point_array)
 
     def show_landmarks(self, img_path, results=None):
         """
-        creates debug files and pyplots of landmarks
+        Creates debug files and pyplots of landmarks.
         saves files to /data/annotated/<timestamp>.png
         :param img_path: original image
         :param results: recognition output
@@ -74,13 +78,13 @@ class MediaPipe:
             print('hand_landmarks:', hand_landmarks)
             print(
                 f'Index finger tip coordinates: (',
-                f'{hand_landmarks.landmark[self.hands.HandLandmark.INDEX_FINGER_TIP].x * image_width}, '
-                f'{hand_landmarks.landmark[self.hands.HandLandmark.INDEX_FINGER_TIP].y * image_height})'
+                f'{hand_landmarks.landmark[mp.hands.HandLandmark.INDEX_FINGER_TIP].x * image_width}, '
+                f'{hand_landmarks.landmark[mp.hands.HandLandmark.INDEX_FINGER_TIP].y * image_height})'
             )
             self.drawing.draw_landmarks(
                 annotated_image,
                 hand_landmarks,
-                self.hands.HAND_CONNECTIONS,
+                mp.hands.HAND_CONNECTIONS,
                 self.drawing_styles.get_default_hand_landmarks_style(),
                 self.drawing_styles.get_default_hand_connections_style())
         cv.imwrite(
@@ -91,8 +95,11 @@ class MediaPipe:
         for hand_world_landmarks in results.multi_hand_world_landmarks:
             # draw from different angles
             self.drawing.plot_landmarks(
-                hand_world_landmarks, self.hands.HAND_CONNECTIONS, azimuth=5)
+                hand_world_landmarks, mp.hands.HAND_CONNECTIONS, azimuth=5)
             self.drawing.plot_landmarks(
-                hand_world_landmarks, self.hands.HAND_CONNECTIONS, azimuth=50, elevation=20)
+                hand_world_landmarks, mp.hands.HAND_CONNECTIONS, azimuth=50, elevation=20)
             self.drawing.plot_landmarks(
-                hand_world_landmarks, self.hands.HAND_CONNECTIONS, azimuth=5, elevation=90)
+                hand_world_landmarks, mp.hands.HAND_CONNECTIONS, azimuth=5, elevation=90)
+
+    def close(self):
+        self.hands.close()
