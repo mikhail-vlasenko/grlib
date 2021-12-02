@@ -12,7 +12,7 @@ if __name__ == '__main__':
     loader = DefaultLoader('data/asl_alphabet_train/')
     loader.create_digit_landmarks()
 
-    data = loader.load_digit_landmarks('data/asl_alphabet_train/digit_landmarks.csv')
+    data = loader.load_digit_landmarks()
     X = data.iloc[:, :63]
     y = data['label']
     print(X.head())
