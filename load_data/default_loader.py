@@ -12,7 +12,7 @@ from feature_extraction.mediapipe_landmarks import MediaPipe
 
 class DefaultLoader:
     """
-    retrieves landmarks from folder with images
+    Retrieves landmarks from folder with images.
     """
     def __init__(self, path):
         """
@@ -26,8 +26,8 @@ class DefaultLoader:
 
     def create_landmarks(self, output_file='landmarks.csv'):
         """
-        processes images of gestures and saves results to csv
-        images are labelled with their folder's name
+        Processes images of gestures and saves results to csv.
+        Images are labelled with their folder's name.
         takes a while
         :param output_file: the file path of the file to write to
         :return: None

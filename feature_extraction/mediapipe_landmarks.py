@@ -11,7 +11,7 @@ from exceptions import NoHandDetectedException
 
 class MediaPipe:
     """
-    Class to interact with MediaPipe library
+    Class to interact with MediaPipe library.
     """
     def __init__(self):
         self.drawing = mp.drawing_utils
@@ -20,7 +20,7 @@ class MediaPipe:
 
     def process(self, img_path: str) -> NamedTuple:
         """
-        performs landmark extraction
+        Performs landmark extraction.
         :param img_path: path to image
         :return: recognition results
         return type: NamedTuple with fields
@@ -41,7 +41,7 @@ class MediaPipe:
 
     def get_world_landmarks(self, img_path) -> np.array:
         """
-        returns only landmarks for the first detected hand on 1 image
+        Returns only landmarks for the first detected hand on 1 image.
         :param img_path:
         :return:
         """
@@ -59,7 +59,7 @@ class MediaPipe:
 
     def show_landmarks(self, img_path, results=None):
         """
-        creates debug files and pyplots of landmarks
+        Creates debug files and pyplots of landmarks.
         saves files to /data/annotated/<timestamp>.png
         :param img_path: original image
         :param results: recognition output
