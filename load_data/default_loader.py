@@ -6,7 +6,7 @@ import pandas as pd
 from feature_extraction.mediapipe_landmarks import MediaPipe
 
 
-class IslLoader:
+class DefaultLoader:
     """
     retrieves landmarks from unpacked dataset
     https://www.kaggle.com/vaishnaviasonawane/indian-sign-language-dataset
