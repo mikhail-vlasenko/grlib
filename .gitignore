@@ -1,5 +1,8 @@
-data/
+dataISL/
 .idea/
+asl_alphabet_test/
+asl_alphabet_train/
+main.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

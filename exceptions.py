@@ -1,0 +1,3 @@
+
+class NoHandDetectedException(Exception):
+    pass
