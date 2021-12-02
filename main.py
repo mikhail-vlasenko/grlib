@@ -10,9 +10,9 @@ from sklearn.metrics import accuracy_score
 
 if __name__ == '__main__':
     loader = DefaultLoader('data/asl_alphabet_train/')
-    loader.create_digit_landmarks()
+    loader.create_landmarks()
 
-    data = loader.load_digit_landmarks()
+    data = loader.load_landmarks()
     X = data.iloc[:, :63]
     y = data['label']
     print(X.head())

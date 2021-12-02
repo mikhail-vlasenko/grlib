@@ -12,24 +12,25 @@ from feature_extraction.mediapipe_landmarks import MediaPipe
 
 class DefaultLoader:
     """
-    retrieves landmarks from unpacked dataset
-    https://www.kaggle.com/vaishnaviasonawane/indian-sign-language-dataset
+    retrieves landmarks from folder with images
     """
     def __init__(self, path):
         """
         :param path: path to dataset's main folder
         """
+        self.mp = None
         if path[-1] != '/':
             path = path + '/'
         self.path = path
         self.thread_pool = ThreadPool(cpu_count())
 
-    def create_digit_landmarks(self, output_file='digit_landmarks.csv'):
+    def create_landmarks(self, output_file='landmarks.csv'):
         """
-        processes images of digit gestures and saves results to csv
+        processes images of gestures and saves results to csv
+        images are labelled with their folder's name
         takes a while
-        :param output_file:
-        :return:
+        :param output_file: the file path of the file to write to
+        :return: None
         """
         self.mp = MediaPipe()
         data = []
@@ -41,7 +42,7 @@ class DefaultLoader:
 
             files = [curr_path + file for file in os.listdir(curr_path)]
 
-            results = self.thread_pool.map(self.create_digit_landmarks_for_image, files)
+            results = self.thread_pool.map(self.create_landmarks_for_image, files)
             results = [result for result in results if len(result) > 0]
             for result in results:
                 result.append(i)
@@ -55,7 +56,7 @@ class DefaultLoader:
         df = df.rename(columns={len(df.columns)-1: "label"})
         df.to_csv(self.path + output_file, index=False)
 
-    def create_digit_landmarks_for_image(self, file_path) -> List[object]:
+    def create_landmarks_for_image(self, file_path) -> List[object]:
         """
         Processes a single image and retrieves the landmarks of this image. Used by the threads.
         :param file_path: - the file path of the file to read
@@ -68,5 +69,5 @@ class DefaultLoader:
             print(e)
             return list()
 
-    def load_digit_landmarks(self, file='digit_landmarks.csv') -> pd.DataFrame:
+    def load_landmarks(self, file='landmarks.csv') -> pd.DataFrame:
         return pd.read_csv(self.path + file)
