@@ -12,9 +12,6 @@ if __name__ == '__main__':
     loader = DefaultLoader('data/asl_alphabet_train/')
     loader.create_digit_landmarks()
 
-    # mp = MediaPipe()
-    # mp.show_landmarks('asl_alphabet_train/asl_alphabet_train/A/A100.jpg')
-
     data = loader.load_digit_landmarks('data/asl_alphabet_train/digit_landmarks.csv')
     X = data.iloc[:, :63]
     y = data['label']
