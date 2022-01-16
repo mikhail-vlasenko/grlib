@@ -66,7 +66,8 @@ class DefaultLoader:
             result = self.mp.get_world_landmarks(file_path).flatten().tolist()
             return result
         except NoHandDetectedException as e:
-            print(e)
+            # Print it like this to avoid buffer issues in multi-threaded code
+            print(str(e) + '\n', end='')
             return list()
 
     def load_landmarks(self, file='landmarks.csv') -> pd.DataFrame:
