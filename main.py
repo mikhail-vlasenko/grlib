@@ -1,7 +1,7 @@
 from feature_extraction.mediapipe_landmarks import MediaPipe
 from load_data.default_loader import DefaultLoader
 from data_augmentation.common import augment_dataset
-from data_augmentation.landmarks_2d import small_rotation
+from data_augmentation.landmarks_2d import small_rotation, scaling
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
@@ -19,9 +19,10 @@ def load_data():
     X = data.iloc[:, :63]
     X = loader.to_2d(X)
     X_aug = augment_dataset(X, small_rotation)
-    X = pd.concat([X, X_aug])
+    X_aug2 = augment_dataset(X, scaling)
+    X = pd.concat([X, X_aug, X_aug2])
     y = data['label']
-    y = pd.concat([y, y])
+    y = pd.concat([y, y, y])
 
     loader_left = DefaultLoader('data/asl_left_hand')
     data2 = loader_left.load_landmarks()
@@ -31,7 +32,7 @@ def load_data():
 
     # return train_test_split(X, y, test_size=0.2)
     # return x_test[:5000], X[:5000], y_test[:5000], y[:5000]
-    return x_test, X, y_test, y
+    return X, x_test, y, y_test
 
 
 if __name__ == '__main__':
