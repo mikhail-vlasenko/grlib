@@ -39,17 +39,40 @@ class MediaPipe:
         results = self.hands.process(cv.cvtColor(image, cv.COLOR_BGR2RGB))
         return results
 
-    def get_world_landmarks(self, img_path) -> np.array:
+    def get_landmarks(self, img_path: str) -> np.array:
         """
         Returns only landmarks for the first detected hand on 1 image.
-        :param img_path:
-        :return:
+        :param img_path: the path to the image from which to read the landmarks
+        :return: a numpy array of landmarks
         """
-        point_array = []
+        detected_hands = self.process(img_path).multi_hand_landmarks
+
+        if detected_hands is None:
+            raise NoHandDetectedException(f'No hand has been detected for {img_path}')
+
+        return self.get_landmarks_from_hands(detected_hands)
+
+    def get_world_landmarks(self, img_path: str) -> np.array:
+        """
+        Returns only world landmarks for the first detected hand on 1 image.
+        :param img_path: the path to the image from which to read the landmarks
+        :return: a numpy array of landmarks
+        """
         detected_hands = self.process(img_path).multi_hand_world_landmarks
 
         if detected_hands is None:
             raise NoHandDetectedException(f'No hand has been detected for {img_path}')
+
+        return self.get_landmarks_from_hands(detected_hands)
+
+    @staticmethod
+    def get_landmarks_from_hands(detected_hands) -> np.array:
+        """
+        Returns a list of landmarks from the given processed list of hands.
+        :param detected_hands: the hands as detected by mediapipe
+        :return: a list of landmarks from detected_hands
+        """
+        point_array = []
 
         landmarks = detected_hands[0].landmark
 
