@@ -70,13 +70,18 @@ class DefaultLoader:
             return list()
 
     def load_landmarks(self, file='landmarks.csv') -> pd.DataFrame:
+        """
+        Read landmarks from csv file
+        :param file: path, without loader root path
+        :return: the dataframe
+        """
         return pd.read_csv(self.path + file)
 
     def to_2d(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Drops columns that store depth coordinate
-        :param df:
-        :return:
+        :param df: the dataframe
+        :return: dataframe without depth columns
         """
         drop_columns = [str(x) for x in range(2, 63, 3)]
         return df.drop(columns=drop_columns)

@@ -37,11 +37,11 @@ def small_rotation(data, max_angle=0.25):
 def scaling(data, max_factor=1.2):
     """
     Multiplies all data points by a value.
-    :param data:
+    :param data: iterable (e.g. list of coordinates)
     :param max_factor: scaling is in range (1/max_factor, max_factor)
-    :return:
+    :return: scaled data
     """
-    factor = 1 / max_factor + random.random() * (max_factor - 1 / max_factor)
+    factor = random.uniform(1 / max_factor, max_factor)
     for i in range(len(data)):
         data[i] = data[i] * factor
     return data
