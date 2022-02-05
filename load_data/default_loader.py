@@ -71,4 +71,9 @@ class DefaultLoader:
             return list()
 
     def load_landmarks(self, file='landmarks.csv') -> pd.DataFrame:
+        """
+        Read landmarks from csv file
+        :param file: path, without loader root path
+        :return: the dataframe
+        """
         return pd.read_csv(self.path + file)
