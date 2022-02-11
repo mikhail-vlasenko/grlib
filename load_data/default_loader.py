@@ -36,16 +36,18 @@ class DefaultLoader:
         data = []
         data_labels = [folder for folder in os.listdir(self.path) if os.path.isdir(self.path + folder)]
 
+        # go through all folders found in this directory
         for i, folder in enumerate(data_labels):
             curr_path = self.path + folder + '/'
             print(f'Processing {curr_path}')
-
             files = [curr_path + file for file in os.listdir(curr_path)]
 
+            # use all available processors for faster computation
             results = self.thread_pool.map(self.create_landmarks_for_image, files)
             results = [result for result in results if len(result) > 0]
+            # append label
             for result in results:
-                result.append(i)
+                result.append(folder)
 
             data.extend(results)
         self.mp.close()
@@ -53,14 +55,40 @@ class DefaultLoader:
         data = np.array(data)
         df = pd.DataFrame(data)
         # rename label column, others stay as numbers
-        df = df.rename(columns={len(df.columns)-1: "label"})
+        df = df.rename(columns={len(df.columns)-1: 'label'})
+        df.to_csv(self.path + output_file, index=False)
+
+    def create_landmarks_with_labels(self, labels: pd.DataFrame, output_file='landmarks.csv', threading=True):
+        """
+        Processes images of gestures and saves results to csv.
+        Images are labelled according to provided *labels*
+        If no hand is found, all 63 landmarks are set to 0
+        :param labels: a dataframe with additional image path (no dataset root) in *path* column and *label* column.
+        :param output_file: the file path of the file to write to
+        :return: None
+        """
+        files = self.path + labels['path']
+
+        self.mp = MediaPipe()
+        if threading:
+            results = self.thread_pool.map(self.create_landmarks_for_image, files)
+        else:
+            results = []
+            for f in files:
+                results.append(self.create_landmarks_for_image(f))
+        self.mp.close()
+
+        results = [res if len(res) > 0 else np.zeros(63) for res in results]
+
+        df = pd.DataFrame(np.array(results))
+        df['label'] = labels['label']
         df.to_csv(self.path + output_file, index=False)
 
     def create_landmarks_for_image(self, file_path) -> List[object]:
         """
         Processes a single image and retrieves the landmarks of this image. Used by the threads.
         :param file_path: - the file path of the file to read
-        :return: - the list of landmarks detected by MediaPipe or an empty list if no landmarks were found
+        :return: - the list of 63 landmarks detected by MediaPipe or an empty list if no landmarks were found
         """
         try:
             result = self.mp.get_world_landmarks(file_path).flatten().tolist()

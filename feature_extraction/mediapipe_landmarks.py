@@ -1,4 +1,6 @@
 # cv2.cv2 because MediaPipe uses opencv-contrib
+from collections import namedtuple
+
 import cv2.cv2 as cv
 from mediapipe import solutions as mp
 import time
@@ -33,6 +35,10 @@ class MediaPipe:
              with the origin at the hand’s approximate geometric center.
             multi_handedness - 'left' or 'right', and the certainty that the hand is there
         """
+        if not (img_path.endswith('.jpg') or img_path.endswith('.jpeg') or img_path.endswith('.png')):
+            print('not an image')
+            ret_tuple = namedtuple('none_tuple', 'multi_hand_landmarks multi_hand_world_landmarks multi_handedness')
+            return ret_tuple(None, None, None)
         # Read an image, flip it around y-axis for correct handedness output.
         image = cv.flip(cv.imread(img_path), 1)
         # Convert the BGR image to RGB before processing.
@@ -56,7 +62,7 @@ class MediaPipe:
         """
         Returns only world landmarks for the first detected hand on 1 image.
         :param img_path: the path to the image from which to read the landmarks
-        :return: a numpy array of landmarks
+        :return: a numpy array of 63 floating point landmarks
         """
         detected_hands = self.process(img_path).multi_hand_world_landmarks
 
