@@ -64,7 +64,9 @@ class DefaultLoader:
         Images are labelled according to provided *labels*
         If no hand is found, all 63 landmarks are set to 0
         :param labels: a dataframe with additional image path (no dataset root) in *path* column and *label* column.
+        If no *labels* column is provided, landmarks are computed, but no labels are assigned.
         :param output_file: the file path of the file to write to
+        :param threading: use threading to speed up (may lead to scheduler error)
         :return: None
         """
         files = self.path + labels['path']
@@ -81,7 +83,8 @@ class DefaultLoader:
         results = [res if len(res) > 0 else np.zeros(63) for res in results]
 
         df = pd.DataFrame(np.array(results))
-        df['label'] = labels['label']
+        if 'labels' in labels.columns:
+            df['label'] = labels['label']
         df.to_csv(self.path + output_file, index=False)
 
     def create_landmarks_for_image(self, file_path) -> List[object]:
