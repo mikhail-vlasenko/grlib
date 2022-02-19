@@ -4,6 +4,7 @@ from collections import namedtuple
 import cv2.cv2 as cv
 from mediapipe import solutions as mp
 import time
+import os
 from typing import NamedTuple
 
 import numpy as np
@@ -18,7 +19,7 @@ class MediaPipe:
     def __init__(self):
         self.drawing = mp.drawing_utils
         self.drawing_styles = mp.drawing_styles
-        self.hands = mp.hands.Hands(static_image_mode=True, max_num_hands=1, min_detection_confidence=0.5)
+        self.hands = mp.hands.Hands(static_image_mode=True, max_num_hands=2, min_detection_confidence=0.5)
 
     def process(self, img_path: str) -> NamedTuple:
         """
@@ -80,10 +81,11 @@ class MediaPipe:
         """
         point_array = []
 
-        landmarks = detected_hands[0].landmark
-
-        for point in landmarks:
-            point_array.append([point.x, point.y, point.z])
+        for hand in detected_hands:
+            for point in hand.landmark:
+                point_array.append([point.x, point.y, point.z])
+        # If one or zero hands were detected, fill the rest of the list with zeros
+        point_array.extend([[0.0, 0.0, 0.0] for _ in range(21 * 2 - len(point_array))])
         return np.array(point_array)
 
     def show_landmarks(self, img_path, results=None):

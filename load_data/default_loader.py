@@ -5,6 +5,7 @@ from typing import List
 
 import numpy as np
 import pandas as pd
+import cv2 as cv
 
 from exceptions import NoHandDetectedException
 from feature_extraction.mediapipe_landmarks import MediaPipe
@@ -80,10 +81,10 @@ class DefaultLoader:
                 results.append(self.create_landmarks_for_image(f))
         self.mp.close()
 
-        results = [res if len(res) > 0 else np.zeros(63) for res in results]
+        results = [res if len(res) > 0 else np.zeros(63 * 2) for res in results]
 
         df = pd.DataFrame(np.array(results))
-        if 'labels' in labels.columns:
+        if 'label' in labels.columns:
             df['label'] = labels['label']
         df.to_csv(self.path + output_file, index=False)
 
@@ -97,6 +98,7 @@ class DefaultLoader:
             result = self.mp.get_world_landmarks(file_path).flatten().tolist()
             return result
         except NoHandDetectedException as e:
+            cv.imwrite('data/kenyan/out/' + os.path.basename(file_path), cv.imread(file_path))
             # Print it like this to avoid buffer issues in multi-threaded code
             print(str(e) + '\n', end='')
             return list()
