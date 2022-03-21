@@ -80,6 +80,12 @@ class MediaPipe:
             point_array.append([point.x, point.y, point.z])
         return np.array(point_array)
 
+    def get_landmarks_from_image(self, img: np.array) -> NamedTuple:
+        image = cv.flip(img, 1)
+        results = self.hands.process(cv.cvtColor(image, cv.COLOR_BGR2RGB))
+
+        return results
+
     def show_landmarks(self, img_path, results=None):
         """
         Creates debug files and pyplots of landmarks.

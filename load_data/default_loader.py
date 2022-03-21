@@ -22,7 +22,7 @@ class DefaultLoader:
         if path[-1] != '/':
             path = path + '/'
         self.path = path
-        self.thread_pool = ThreadPool(cpu_count())
+        self.thread_pool = ThreadPool(1)
 
     def create_landmarks(self, output_file='landmarks.csv'):
         """
