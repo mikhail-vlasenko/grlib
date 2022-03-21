@@ -1,11 +1,11 @@
 # cv2.cv2 because MediaPipe uses opencv-contrib
 from collections import namedtuple
-
+from itertools import permutations, combinations
 import cv2.cv2 as cv
 from mediapipe import solutions as mp
 import time
 import os
-from typing import NamedTuple
+from typing import NamedTuple, List
 
 import numpy as np
 

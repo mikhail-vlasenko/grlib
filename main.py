@@ -2,8 +2,19 @@ from feature_extraction.mediapipe_landmarks import MediaPipe
 from load_data.default_loader import DefaultLoader
 from data_augmentation.common import augment_dataset
 from data_augmentation.landmarks_2d import small_rotation, scaling
+from preprocessing.all_landmarks import is_zeros
 import pandas as pd
 import numpy as np
+
+from catboost import CatBoostClassifier
+
+import tensorflow as tf
+from tensorflow.keras import Sequential
+from tensorflow.keras.models import load_model
+from tensorflow.keras.layers import Dense, Dropout, Conv1D, MaxPooling1D, Flatten
+from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
+
+
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.dummy import DummyClassifier
@@ -62,35 +73,71 @@ def find_best_model(models, params, X, y):
     return best_model
 
 if __name__ == '__main__':
+    classes = ['Church', 'Enough/Satisfied', 'Friend', 'Love', 'Me', 'Mosque', 'Seat', 'Temple', 'You']
+
     X, y = load_data()
 
     params = [
         {'strategy': ['stratified', 'most_frequent', 'uniform']},
         {'n_neighbors': [3, 5, 7, 11, 15], 'weights': ['uniform', 'distance']},
-        {'C': [1, 3, 5, 10, 20], 'degree': [1, 2, 3]},
+        {'C': [5, 10, 20, 40, 60, 80, 100, 150], 'degree': [1, 2, 3]},
         {'C': [40, 80, 100, 150, 300]},
         {'max_depth': [None, 2, 5, 10, 20, 30], 'criterion': ['gini', 'entropy']}
     ]
 
     models = [DummyClassifier(), KNeighborsClassifier(), SVC(), LogisticRegression(), DecisionTreeClassifier()]
 
+    y_nn = np.zeros((y.shape[0], len(classes)))
+    for i in range(y.shape[0]):
+        inx = classes.index(y.iloc[i])
+        y_nn[i][inx] = 1
+
+    checkpoint_callback = ModelCheckpoint(filepath='weights_{val_categorical_accuracy:.3f}.h5',
+                               monitor='val_categorical_accuracy',
+                               mode='max',
+                               save_best_only=True)
+
+    nn = Sequential()
+    nn.add(Conv1D(128, (12, ), activation='relu', input_shape=(X.shape[1], 1)))
+    nn.add(Flatten())
+    nn.add(Dense(256, activation='relu'))
+    nn.add(Dropout(0.4))
+    nn.add(Dense(64, activation='relu'))
+    nn.add(Dropout(0.2))
+    nn.add(Dense(16, activation='relu'))
+    nn.add(Dropout(0.2))
+    nn.add(Dense(y_nn.shape[1], activation='sigmoid'))
+
+    nn.compile(optimizer='adam',
+               loss='categorical_crossentropy',
+               metrics=['categorical_accuracy'])
+
+    # nn.fit(X, y_nn, batch_size=32, epochs=60,
+    #        validation_split=0.2,
+    #        callbacks=[checkpoint_callback])
+
+
     # best_model = find_best_model(models, params, X, y)
-    best_model = SVC(C=10, degree=1)
-    best_model.fit(X, y)
+    # best_model = SVC(C=10, degree=1)
+    # best_model.fit(X, y)
 
     X_test = load_test()
+    model = load_model('weights_0.916.h5')
+    preds = model.predict(X_test)
 
-    preds = best_model.predict(X_test)
-    print(preds)
-
-    classes = ['Church', 'Enough/Satisfied', 'Friend', 'Love', 'Me', 'Mosque', 'Seat', 'Temple', 'You']
 
     labels = pd.read_csv('data/kenyan/Test.csv').to_numpy()
+    preds_resnet = pd.read_csv('data/kenyan/eff_long_subm.csv').to_numpy()
+    landmarks_test = pd.read_csv('data/kenyan/landmarks_2hands_test.csv').to_numpy()
 
-    result = np.full((labels.shape[0], len(classes)), 0.2)
+    result = np.full((labels.shape[0], len(classes)), 0.01)
     for i, pred in enumerate(preds):
-        inx = classes.index(pred)
-        result[i][inx] = 0.8
+        if landmarks_test[i][0] != 0:
+            inx = np.argmax(pred)
+            result[i][inx] = 0.99
+        else:
+            max_inx = np.argmax(preds_resnet[i][1:])
+            result[i][max_inx] = 0.99
 
     result = pd.DataFrame(result, columns=classes)
     result.insert(0, 'img_IDS', labels, True)
