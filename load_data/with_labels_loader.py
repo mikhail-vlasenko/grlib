@@ -11,11 +11,11 @@ class WithLabelsLoader(BaseLoader):
     Retrieves landmarks from folder with images.
     """
 
-    def __init__(self, path):
+    def __init__(self, path: str, num_hands: int = 2):
         """
         :param path: path to dataset's main folder
         """
-        super().__init__(path)
+        super().__init__(path, num_hands)
 
     def create_landmarks(self, labels: pd.DataFrame, output_file='landmarks.csv'):
         """

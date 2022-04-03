@@ -9,7 +9,7 @@ from sklearn.metrics import accuracy_score
 # Some notes: add a pipeline, speed up mediapipe
 
 if __name__ == '__main__':
-    loader = ByFolderLoader('out/')
+    loader = ByFolderLoader('out/', 1)
     loader.create_landmarks()
 
     data = loader.load_landmarks()

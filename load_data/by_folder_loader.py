@@ -10,11 +10,11 @@ class ByFolderLoader(BaseLoader):
     """
     Retrieves landmarks from folder with images.
     """
-    def __init__(self, path):
+    def __init__(self, path: str, num_hands: int = 2):
         """
         :param path: path to dataset's main folder
         """
-        super().__init__(path)
+        super().__init__(path, num_hands)
 
     def create_landmarks(self, output_file='landmarks.csv'):
         """
@@ -24,7 +24,7 @@ class ByFolderLoader(BaseLoader):
         :param output_file: the file path of the file to write to
         :return: None
         """
-        self.mp = MediaPipe()
+        self.mp = MediaPipe(self.num_hands)
         data = []
         data_labels = [folder for folder in os.listdir(self.path) if os.path.isdir(self.path + folder)]
 

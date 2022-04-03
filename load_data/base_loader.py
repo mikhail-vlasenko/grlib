@@ -9,10 +9,11 @@ class BaseLoader(object):
     Retrieves landmarks from folder with images.
     """
 
-    def __init__(self, path):
+    def __init__(self, path: str, num_hands: int = 2):
         """
         :param path: path to dataset's main folder
         """
+        self.num_hands = num_hands
         self.mp = None
         if path[-1] != '/':
             path = path + '/'
