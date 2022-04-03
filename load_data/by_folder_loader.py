@@ -1,16 +1,12 @@
 import os
-from multiprocessing.pool import ThreadPool
-from multiprocessing import cpu_count
-from typing import List
-
 import numpy as np
 import pandas as pd
 
-from exceptions import NoHandDetectedException
 from feature_extraction.mediapipe_landmarks import MediaPipe
+from load_data.base_loader import BaseLoader
 
 
-class DefaultLoader:
+class ByFolderLoader(BaseLoader):
     """
     Retrieves landmarks from folder with images.
     """
@@ -18,11 +14,7 @@ class DefaultLoader:
         """
         :param path: path to dataset's main folder
         """
-        self.mp = None
-        if path[-1] != '/':
-            path = path + '/'
-        self.path = path
-        self.thread_pool = ThreadPool(1)
+        super().__init__(path)
 
     def create_landmarks(self, output_file='landmarks.csv'):
         """
@@ -42,8 +34,13 @@ class DefaultLoader:
 
             files = [curr_path + file for file in os.listdir(curr_path)]
 
-            results = self.thread_pool.map(self.create_landmarks_for_image, files)
+            results = []
+            for file in files:
+                results.append(self.create_landmarks_for_image(file))
+
+            # Remove the instances where no hand was detected
             results = [result for result in results if len(result) > 0]
+
             for result in results:
                 result.append(i)
 
@@ -52,28 +49,7 @@ class DefaultLoader:
 
         data = np.array(data)
         df = pd.DataFrame(data)
+
         # rename label column, others stay as numbers
         df = df.rename(columns={len(df.columns)-1: "label"})
         df.to_csv(self.path + output_file, index=False)
-
-    def create_landmarks_for_image(self, file_path) -> List[object]:
-        """
-        Processes a single image and retrieves the landmarks of this image. Used by the threads.
-        :param file_path: - the file path of the file to read
-        :return: - the list of landmarks detected by MediaPipe or an empty list if no landmarks were found
-        """
-        try:
-            result = self.mp.get_world_landmarks(file_path).flatten().tolist()
-            return result
-        except NoHandDetectedException as e:
-            # Print it like this to avoid buffer issues in multi-threaded code
-            print(str(e) + '\n', end='')
-            return list()
-
-    def load_landmarks(self, file='landmarks.csv') -> pd.DataFrame:
-        """
-        Read landmarks from csv file
-        :param file: path, without loader root path
-        :return: the dataframe
-        """
-        return pd.read_csv(self.path + file)
