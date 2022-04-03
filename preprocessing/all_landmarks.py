@@ -7,8 +7,7 @@ def is_zeros(data):
     :param data:
     :return:
     """
-    # TODO: fix
-    return data['0'] == 0
+    return (data == 0).all(axis=1)
 
 
 def drop_invalid(df: pd.DataFrame) -> pd.DataFrame:
