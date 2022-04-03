@@ -4,8 +4,8 @@ import pandas as pd
 def is_zeros(data):
     """
     True if all landmarks are 0
-    :param data:
-    :return:
+    :param data: the data to check for empty landmarks
+    :return: the indexes where all columns are 0s (meaning no landmarks)
     """
     return (data == 0).all(axis=1)
 

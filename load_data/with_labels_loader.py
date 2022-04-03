@@ -29,14 +29,14 @@ class WithLabelsLoader(BaseLoader):
         """
         files = self.path + labels['path']
 
-        self.mp = MediaPipe()
+        self.mp = MediaPipe(self.num_hands)
 
         results = []
         for f in files:
             results.append(self.create_landmarks_for_image(f))
 
         # Replace with 0s to keep the correct order with respect to the labels file
-        results = [res if len(res) > 0 else np.zeros(63) for res in results]
+        results = [res if len(res) > 0 else np.zeros(self.num_hands * 63) for res in results]
 
         self.mp.close()
 
