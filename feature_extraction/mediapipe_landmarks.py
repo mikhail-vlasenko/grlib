@@ -1,8 +1,11 @@
 # cv2.cv2 because MediaPipe uses opencv-contrib
+from collections import namedtuple
+from itertools import permutations, combinations
 import cv2.cv2 as cv
 from mediapipe import solutions as mp
 import time
-from typing import NamedTuple
+import os
+from typing import NamedTuple, List
 
 import numpy as np
 
@@ -16,7 +19,7 @@ class MediaPipe:
     def __init__(self):
         self.drawing = mp.drawing_utils
         self.drawing_styles = mp.drawing_styles
-        self.hands = mp.hands.Hands(static_image_mode=True, max_num_hands=1, min_detection_confidence=0.5)
+        self.hands = mp.hands.Hands(static_image_mode=True, max_num_hands=2, min_detection_confidence=0.5)
 
     def process(self, img_path: str) -> NamedTuple:
         """
@@ -33,6 +36,10 @@ class MediaPipe:
              with the origin at the hand’s approximate geometric center.
             multi_handedness - 'left' or 'right', and the certainty that the hand is there
         """
+        if not (img_path.endswith('.jpg') or img_path.endswith('.jpeg') or img_path.endswith('.png')):
+            print('not an image')
+            ret_tuple = namedtuple('none_tuple', 'multi_hand_landmarks multi_hand_world_landmarks multi_handedness')
+            return ret_tuple(None, None, None)
         # Read an image, flip it around y-axis for correct handedness output.
         image = cv.flip(cv.imread(img_path), 1)
         # Convert the BGR image to RGB before processing.
@@ -56,7 +63,7 @@ class MediaPipe:
         """
         Returns only world landmarks for the first detected hand on 1 image.
         :param img_path: the path to the image from which to read the landmarks
-        :return: a numpy array of landmarks
+        :return: a numpy array of 63 floating point landmarks
         """
         detected_hands = self.process(img_path).multi_hand_world_landmarks
 
@@ -74,10 +81,11 @@ class MediaPipe:
         """
         point_array = []
 
-        landmarks = detected_hands[0].landmark
-
-        for point in landmarks:
-            point_array.append([point.x, point.y, point.z])
+        for hand in detected_hands:
+            for point in hand.landmark:
+                point_array.append([point.x, point.y, point.z])
+        # If one or zero hands were detected, fill the rest of the list with zeros
+        point_array.extend([[0.0, 0.0, 0.0] for _ in range(21 * 2 - len(point_array))])
         return np.array(point_array)
 
     def get_landmarks_from_image(self, img: np.array) -> NamedTuple:
