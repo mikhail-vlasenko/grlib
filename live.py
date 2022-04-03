@@ -1,5 +1,5 @@
 from feature_extraction.mediapipe_landmarks import MediaPipe
-from load_data.default_loader import DefaultLoader
+from load_data.by_folder_loader import ByFolderLoader
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
@@ -7,7 +7,7 @@ import cv2 as cv
 import numpy as np
 
 if __name__ == '__main__':
-    loader = DefaultLoader('out')
+    loader = ByFolderLoader('out')
     loader.create_landmarks()
 
     data = loader.load_landmarks()
