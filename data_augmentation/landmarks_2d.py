@@ -17,24 +17,27 @@ def _rotate(point, angle):
     return qx, qy
 
 
-def small_rotation(data, max_angle=0.25):
+def small_rotation(data, max_angle: float = 0.25, num_hands: int = 2):
     """
     Rotates image plane landmarks around (0, 0) which is hand's geometric center
-    :param data: one set of 2d landmarks (42 values)
+    :param data: one set of 2d landmarks
     :param max_angle: maximum rotation in radians
+    :param num_hands: the number of hands in the image
     :return: list
     """
-    if len(data) != 42:
+    # Check if data is 2D (only if each hand gets 42 landmarks)
+    if len(data) != num_hands * 42:
         raise ValueError('Data is not 2-dimensional')
+
     angle = random.uniform(-max_angle, max_angle)
-    augmented = np.zeros(42)
-    for i in range(0, 42, 2):
+    augmented = np.zeros(num_hands * 42)
+    for i in range(0, num_hands * 42, 2):
         augmented[i], augmented[i+1] = _rotate((data[i], data[i+1]), angle)
 
     return augmented.tolist()
 
 
-def scaling(data, max_factor=1.2):
+def scaling(data, max_factor: float = 1.2):
     """
     Multiplies all data points by a value.
     :param data: iterable (e.g. list of coordinates)
