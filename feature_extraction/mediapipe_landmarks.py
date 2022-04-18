@@ -1,8 +1,11 @@
 # cv2.cv2 because MediaPipe uses opencv-contrib
+from collections import namedtuple
+from itertools import permutations, combinations
 import cv2.cv2 as cv
 from mediapipe import solutions as mp
 import time
-from typing import NamedTuple
+import os
+from typing import NamedTuple, List
 
 import numpy as np
 
@@ -13,15 +16,16 @@ class MediaPipe:
     """
     Class to interact with MediaPipe library.
     """
-    def __init__(self):
+    def __init__(self, num_hands: int = 2):
+        self.num_hands = num_hands
         self.drawing = mp.drawing_utils
         self.drawing_styles = mp.drawing_styles
-        self.hands = mp.hands.Hands(static_image_mode=True, max_num_hands=1, min_detection_confidence=0.5)
+        self.hands = mp.hands.Hands(static_image_mode=True, max_num_hands=self.num_hands, min_detection_confidence=0.5)
 
-    def process(self, img_path: str) -> NamedTuple:
+    def process_from_path(self, img_path: str) -> NamedTuple:
         """
         Performs landmark extraction.
-        :param img_path: path to image
+        :param img_path: path to image for which to recognize landmarks
         :return: recognition results
         return type: NamedTuple with fields
             multi_hand_landmarks - 21 hand landmarks where each landmark is composed of x, y and z.
@@ -33,19 +37,34 @@ class MediaPipe:
              with the origin at the hand’s approximate geometric center.
             multi_handedness - 'left' or 'right', and the certainty that the hand is there
         """
+        if not (img_path.endswith('.jpg') or img_path.endswith('.jpeg') or img_path.endswith('.png')):
+            print(f'Not an image: {img_path}')
+            ret_tuple = namedtuple('none_tuple', 'multi_hand_landmarks multi_hand_world_landmarks multi_handedness')
+            return ret_tuple(None, None, None)
+
+        return self.process_from_image(cv.imread(img_path))
+
+    def process_from_image(self, img: np.array) -> NamedTuple:
+        """
+        Identical to process_from_path except for the argument:
+        :param img: the image from which to recognize landmarks
+        :return: recognition results, same as in process_from_path
+        """
         # Read an image, flip it around y-axis for correct handedness output.
-        image = cv.flip(cv.imread(img_path), 1)
+        image = cv.flip(img, 1)
+
         # Convert the BGR image to RGB before processing.
         results = self.hands.process(cv.cvtColor(image, cv.COLOR_BGR2RGB))
+
         return results
 
     def get_landmarks(self, img_path: str) -> np.array:
         """
-        Returns only landmarks for the first detected hand on 1 image.
+        Returns landmarks for only num_hands hands on 1 image.
         :param img_path: the path to the image from which to read the landmarks
         :return: a numpy array of landmarks
         """
-        detected_hands = self.process(img_path).multi_hand_landmarks
+        detected_hands = self.process_from_path(img_path).multi_hand_landmarks
 
         if detected_hands is None:
             raise NoHandDetectedException(f'No hand has been detected for {img_path}')
@@ -54,19 +73,18 @@ class MediaPipe:
 
     def get_world_landmarks(self, img_path: str) -> np.array:
         """
-        Returns only world landmarks for the first detected hand on 1 image.
+        Returns world landmarks for only num_hands hands on 1 image.
         :param img_path: the path to the image from which to read the landmarks
         :return: a numpy array of landmarks
         """
-        detected_hands = self.process(img_path).multi_hand_world_landmarks
+        detected_hands = self.process_from_path(img_path).multi_hand_world_landmarks
 
         if detected_hands is None:
             raise NoHandDetectedException(f'No hand has been detected for {img_path}')
 
         return self.get_landmarks_from_hands(detected_hands)
 
-    @staticmethod
-    def get_landmarks_from_hands(detected_hands) -> np.array:
+    def get_landmarks_from_hands(self, detected_hands) -> np.array:
         """
         Returns a list of landmarks from the given processed list of hands.
         :param detected_hands: the hands as detected by mediapipe
@@ -74,10 +92,12 @@ class MediaPipe:
         """
         point_array = []
 
-        landmarks = detected_hands[0].landmark
+        for hand in detected_hands:
+            for point in hand.landmark:
+                point_array.append([point.x, point.y, point.z])
 
-        for point in landmarks:
-            point_array.append([point.x, point.y, point.z])
+        # If less than num_hands hands were detected, fill in the rest of the list with zeros
+        point_array.extend([[0.0, 0.0, 0.0] for _ in range(21 * self.num_hands - len(point_array))])
         return np.array(point_array)
 
     def show_landmarks(self, img_path, results=None):
@@ -89,7 +109,7 @@ class MediaPipe:
         :return: None
         """
         if results is None:
-            results = self.process(img_path)
+            results = self.process_from_path(img_path)
         image = cv.flip(cv.imread(img_path), 1)
         # Print handedness and draw hand landmarks on the image.
         print('Handedness:', results.multi_handedness)

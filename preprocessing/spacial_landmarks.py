@@ -7,5 +7,5 @@ def to_2d(df: pd.DataFrame) -> pd.DataFrame:
     :param df: the dataframe
     :return: dataframe without depth columns
     """
-    drop_columns = [str(x) for x in range(2, 63, 3)]
+    drop_columns = [str(x) for x in range(2, len(df.columns), 3)]
     return df.drop(columns=drop_columns)
