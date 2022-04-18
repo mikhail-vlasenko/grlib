@@ -40,7 +40,7 @@ if __name__ == '__main__':
         if cv.waitKey(1) & 0xFF == ord('q'):
             break
 
-        landmarks = loader.mp.get_landmarks_from_image(frame).multi_hand_world_landmarks
+        landmarks = loader.mp.process_from_image(frame).multi_hand_world_landmarks
 
         if landmarks is None:
             cv.putText(frame, 'No hand detected', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
