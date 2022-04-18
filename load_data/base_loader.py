@@ -19,7 +19,7 @@ class BaseLoader(object):
             path = path + '/'
         self.path = path
 
-    def create_landmarks_for_image(self, file_path) -> List[object]:
+    def create_landmarks_for_image(self, file_path) -> List[float]:
         """
         Processes a single image and retrieves the landmarks of this image.
         :param file_path: - the file path of the file to read

@@ -42,12 +42,7 @@ class MediaPipe:
             ret_tuple = namedtuple('none_tuple', 'multi_hand_landmarks multi_hand_world_landmarks multi_handedness')
             return ret_tuple(None, None, None)
 
-        # Read an image, flip it around y-axis for correct handedness output.
-        image = cv.flip(cv.imread(img_path), 1)
-
-        # Convert the BGR image to RGB before processing.
-        results = self.hands.process(cv.cvtColor(image, cv.COLOR_BGR2RGB))
-        return results
+        return self.process_from_image(cv.imread(img_path))
 
     def process_from_image(self, img: np.array) -> NamedTuple:
         """
@@ -55,14 +50,17 @@ class MediaPipe:
         :param img: the image from which to recognize landmarks
         :return: recognition results, same as in process_from_path
         """
+        # Read an image, flip it around y-axis for correct handedness output.
         image = cv.flip(img, 1)
+
+        # Convert the BGR image to RGB before processing.
         results = self.hands.process(cv.cvtColor(image, cv.COLOR_BGR2RGB))
 
         return results
 
     def get_landmarks(self, img_path: str) -> np.array:
         """
-        Returns only landmarks for the first detected hand on 1 image.
+        Returns landmarks for only num_hands hands on 1 image.
         :param img_path: the path to the image from which to read the landmarks
         :return: a numpy array of landmarks
         """
@@ -75,9 +73,9 @@ class MediaPipe:
 
     def get_world_landmarks(self, img_path: str) -> np.array:
         """
-        Returns only world landmarks for the first detected hand on 1 image.
+        Returns world landmarks for only num_hands hands on 1 image.
         :param img_path: the path to the image from which to read the landmarks
-        :return: a numpy array of 63 floating point landmarks
+        :return: a numpy array of landmarks
         """
         detected_hands = self.process_from_path(img_path).multi_hand_world_landmarks
 
@@ -98,7 +96,7 @@ class MediaPipe:
             for point in hand.landmark:
                 point_array.append([point.x, point.y, point.z])
 
-        # If one or zero hands were detected, fill the rest of the list with zeros
+        # If less than num_hands hands were detected, fill in the rest of the list with zeros
         point_array.extend([[0.0, 0.0, 0.0] for _ in range(21 * self.num_hands - len(point_array))])
         return np.array(point_array)
 
