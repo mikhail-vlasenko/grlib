@@ -99,8 +99,6 @@ class MediaPipe:
                 stage.recognized_counter += 1
                 return self.get_landmarks_from_hands(detected_hands)
 
-        filename = img_path.split('/')[-1]
-        cv.imwrite('data/kenyan/out/' + filename, image)
         raise NoHandDetectedException(f'No hand has been detected for {img_path}')
 
     def get_landmarks_from_hands(self, detected_hands) -> np.array:
