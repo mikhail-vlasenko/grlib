@@ -25,11 +25,13 @@ class Pipeline(object):
         self.optimize_pipeline = optimize_pipeline
         self.total = 0
         self.stages: List[Stage] = []
+        self.thread_pool = ThreadPool(1)
 
     def add_stage(self, brightness: float = 0, rotation: float = 0):
         new_mp = MediaPipe(self.num_hands)
         stage = Stage(new_mp, len(self.stages), brightness, rotation)
         self.stages.append(stage)
+        self.thread_pool = ThreadPool(len(self.stages))
 
     def optimize(self):
         if self.optimize_pipeline:
@@ -42,8 +44,7 @@ class Pipeline(object):
         for stage in self.stages:
             stage.last_detected_hands = None
 
-        thread_pool = ThreadPool(len(self.stages))
-        thread_pool.map(callback, zip(self.stages, [image for _ in range(len(self.stages))]))
+        self.thread_pool.map(callback, zip(self.stages, [image for _ in range(len(self.stages))]))
 
         # Find detections (if any)
         self.total += 1
