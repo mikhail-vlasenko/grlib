@@ -11,12 +11,12 @@ class ByFolderLoader(BaseLoader):
     """
     Retrieves landmarks from folder with images.
     """
-    def __init__(self, pipeline: Pipeline, path: str, num_hands: int = 2, verbose: bool = True):
+    def __init__(self, pipeline: Pipeline, path: str, verbose: bool = True):
         """
         :param path: path to dataset's main folder
         :param num_hands: the number of hands to detect
         """
-        super().__init__(pipeline, path, num_hands, verbose)
+        super().__init__(pipeline, path, verbose)
 
     def create_landmarks(self, output_file='landmarks.csv'):
         """
@@ -28,7 +28,6 @@ class ByFolderLoader(BaseLoader):
         """
 
         # Potential speed-up: create mp instance per thread - this should be thread safe
-        self.mp = MediaPipe(self.pipeline, self.num_hands)
         data = []
         data_labels = [folder for folder in os.listdir(self.path) if os.path.isdir(self.path + folder)]
 

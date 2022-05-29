@@ -12,7 +12,7 @@ from load_data.with_labels_loader import WithLabelsLoader
 from preprocessing.all_landmarks import drop_invalid
 
 if __name__ == '__main__':
-    pipeline = Pipeline()
+    pipeline = Pipeline(2)
     pipeline.add_stage()
     pipeline.add_stage(0, 30)
     pipeline.add_stage(0, -30)
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     pipeline.add_stage(60)
     pipeline.add_stage(30)
 
-    loader = WithLabelsLoader(pipeline, 'data/kenyan/images', 2)
+    loader = WithLabelsLoader(pipeline, 'data/kenyan/images')
     labels = pd.read_csv('data/kenyan/Train.csv')
     loader.create_landmarks(labels)
 

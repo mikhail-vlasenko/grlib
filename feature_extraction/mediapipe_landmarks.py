@@ -9,15 +9,13 @@ from typing import NamedTuple, List
 
 import numpy as np
 from exceptions import NoHandDetectedException
-from feature_extraction.pipeline import Pipeline
 
 
 class MediaPipe:
     """
     Class to interact with MediaPipe library.
     """
-    def __init__(self, pipeline: Pipeline, num_hands: int = 2):
-        self.pipeline = pipeline
+    def __init__(self, num_hands: int = 2):
         self.num_hands = num_hands
         self.drawing = mp.drawing_utils
         self.drawing_styles = mp.drawing_styles
@@ -62,44 +60,6 @@ class MediaPipe:
         results = self.hands.process(cv.cvtColor(image, cv.COLOR_BGR2RGB))
 
         return results
-
-    def get_landmarks(self, img_path: str) -> np.array:
-        """
-        Returns landmarks for only num_hands hands on 1 image.
-        :param img_path: the path to the image from which to read the landmarks
-        :return: a numpy array of landmarks
-        """
-        image = cv.imread(img_path)
-
-        self.pipeline.total += 1
-        for stage in self.pipeline.stages:
-            converted_image = stage.process(image)
-
-            detected_hands = self.process_from_image(converted_image).multi_hand_landmarks
-            if detected_hands is not None:
-                stage.recognized_counter += 1
-                return self.get_landmarks_from_hands(detected_hands)
-
-        raise NoHandDetectedException(f'No hand has been detected for {img_path}')
-
-    def get_world_landmarks(self, img_path: str) -> np.array:
-        """
-        Returns world landmarks for only num_hands hands on 1 image.
-        :param img_path: the path to the image from which to read the landmarks
-        :return: a numpy array of landmarks
-        """
-        image = cv.imread(img_path)
-
-        self.pipeline.total += 1
-        for stage in self.pipeline.stages:
-            converted_image = stage.process(image)
-
-            detected_hands = self.process_from_image(converted_image).multi_hand_world_landmarks
-            if detected_hands is not None:
-                stage.recognized_counter += 1
-                return self.get_landmarks_from_hands(detected_hands)
-
-        raise NoHandDetectedException(f'No hand has been detected for {img_path}')
 
     def get_landmarks_from_hands(self, detected_hands) -> np.array:
         """

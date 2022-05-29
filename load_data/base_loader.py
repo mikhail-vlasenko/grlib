@@ -10,13 +10,12 @@ class BaseLoader(object):
     Retrieves landmarks from folder with images.
     """
 
-    def __init__(self, pipeline: Pipeline, path: str, num_hands: int = 2, verbose: bool = True):
+    def __init__(self, pipeline: Pipeline, path: str, verbose: bool = True):
         """
         :param path: path to dataset's main folder
         """
         self.verbose = verbose
         self.pipeline = pipeline
-        self.num_hands = num_hands
         self.mp = None
         if path[-1] != '/':
             path = path + '/'
@@ -29,7 +28,7 @@ class BaseLoader(object):
         :return: - the list of landmarks detected by MediaPipe or an empty list if no landmarks were found
         """
         try:
-            result = self.mp.get_world_landmarks(file_path).flatten().tolist()
+            result = self.pipeline.get_world_landmarks(file_path).flatten().tolist()
             self.pipeline.optimize()
             if self.verbose:
                 print('\r' + str(self.pipeline), end='')
