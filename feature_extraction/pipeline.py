@@ -37,9 +37,7 @@ class Pipeline(object):
         if self.optimize_pipeline:
             self.stages = sorted(self.stages, key=lambda stage: stage.recognized_counter, reverse=True)
 
-    def run_pipeline(self, img_path: str, callback) -> np.ndarray:
-        image = cv.imread(img_path)
-
+    def run_pipeline(self, image: np.ndarray, callback) -> np.ndarray:
         # Reset last_detected_hands for every stage
         for stage in self.stages:
             stage.last_detected_hands = None
@@ -54,13 +52,35 @@ class Pipeline(object):
                 stage.recognized_counter += 1
                 return stage.mp.get_landmarks_from_hands(detected_hands)
 
-        raise NoHandDetectedException(f'No hand detected for {img_path}')
-
     def get_landmarks(self, img_path: str) -> np.ndarray:
-        return self.run_pipeline(img_path, run_stage_landmarks)
+        image = cv.imread(img_path)
+        hands = self.run_pipeline(image, run_stage_landmarks)
+
+        if hands is None:
+            raise NoHandDetectedException(f'No hand detected for {img_path}')
+        return hands
 
     def get_world_landmarks(self, img_path: str) -> np.ndarray:
-        return self.run_pipeline(img_path, run_stage_world_landmarks)
+        image = cv.imread(img_path)
+        hands = self.run_pipeline(image, run_stage_world_landmarks)
+
+        if hands is None:
+            raise NoHandDetectedException(f'No hand detected for {img_path}')
+        return hands
+
+    def get_landmarks_from_image(self, image: np.ndarray) -> np.ndarray:
+        hands = self.run_pipeline(image, run_stage_landmarks)
+
+        if hands is None:
+            raise NoHandDetectedException(f'No hand detected')
+        return hands
+
+    def get_world_landmarks_from_image(self, image: np.ndarray) -> np.ndarray:
+        hands = self.run_pipeline(image, run_stage_world_landmarks)
+
+        if hands is None:
+            raise NoHandDetectedException(f'No hand detected')
+        return hands
 
     def __str__(self) -> str:
         total_recognized = sum(stage.recognized_counter for stage in self.stages)
