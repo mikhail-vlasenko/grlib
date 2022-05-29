@@ -1,6 +1,5 @@
 import cv2.cv2 as cv
-from scipy import ndimage
-
+import imutils
 
 # Taken from https://stackoverflow.com/questions/32609098/how-to-fast-change-image-brightness-with-python-opencv
 def increase_brightness(img, value=30):
@@ -16,5 +15,5 @@ def increase_brightness(img, value=30):
     return img
 
 
-def rotate(img, degrees):
-    return ndimage.rotate(img, degrees)
+def rotate(image, degrees):
+    return imutils.rotate_bound(image, degrees)

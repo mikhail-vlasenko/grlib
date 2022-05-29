@@ -38,8 +38,6 @@ class WithLabelsLoader(BaseLoader):
         # Replace with 0s to keep the correct order with respect to the labels file
         results = [res if len(res) > 0 else np.zeros(self.pipeline.num_hands * 63) for res in results]
 
-        self.mp.close()
-
         df = pd.DataFrame(np.array(results))
         if 'label' in labels.columns:
             df['label'] = labels['label']

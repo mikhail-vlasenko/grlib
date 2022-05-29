@@ -49,7 +49,6 @@ class ByFolderLoader(BaseLoader):
                 result.append(i)
 
             data.extend(results)
-        self.mp.close()
 
         data = np.array(data)
         df = pd.DataFrame(data)

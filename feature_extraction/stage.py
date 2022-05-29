@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Tuple, Any
 
+import cv2.cv2 as cv
 import numpy as np
 from numpy import ndarray
 
@@ -17,6 +18,7 @@ class Stage(object):
         self.brightness = brightness
         self.rotation = rotation
         self.recognized_counter = 0
+        self.last_detected_hands = None
 
     def process(self, image: np.ndarray) -> np.ndarray:
         image = increase_brightness(image, self.brightness)
@@ -24,13 +26,13 @@ class Stage(object):
 
         return image
 
-    def get_landmarks(self, image: np.ndarray):
+    def run_get_landmarks(self, image: np.ndarray):
         converted_image = self.process(image)
 
-        return self.mp.process_from_image(converted_image).multi_hand_landmarks
+        self.last_detected_hands = self.mp.process_from_image(converted_image).multi_hand_landmarks
 
-    def get_world_landmarks(self, image: np.ndarray):
+    def run_get_world_landmarks(self, image: np.ndarray):
         converted_image = self.process(image)
 
-        return self.mp.process_from_image(converted_image).multi_hand_world_landmarks
+        self.last_detected_hands = self.mp.process_from_image(converted_image).multi_hand_world_landmarks
 

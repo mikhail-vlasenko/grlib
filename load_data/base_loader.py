@@ -35,6 +35,8 @@ class BaseLoader(object):
             return result
         except NoHandDetectedException as e:
             # print(str(e))
+            if self.verbose:
+                print('\r' + str(self.pipeline), end='')
             return list()
 
     def load_landmarks(self, file='landmarks.csv') -> pd.DataFrame:
