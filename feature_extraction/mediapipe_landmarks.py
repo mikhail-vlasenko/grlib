@@ -8,15 +8,16 @@ import os
 from typing import NamedTuple, List
 
 import numpy as np
-
 from exceptions import NoHandDetectedException
+from feature_extraction.pipeline import Pipeline
 
 
 class MediaPipe:
     """
     Class to interact with MediaPipe library.
     """
-    def __init__(self, num_hands: int = 2):
+    def __init__(self, pipeline: Pipeline, num_hands: int = 2):
+        self.pipeline = pipeline
         self.num_hands = num_hands
         self.drawing = mp.drawing_utils
         self.drawing_styles = mp.drawing_styles
@@ -26,6 +27,8 @@ class MediaPipe:
         """
         Performs landmark extraction.
         :param img_path: path to image for which to recognize landmarks
+        :param brightness: the additional brightness of the image
+        :param rotation: the rotation of the image in degrees
         :return: recognition results
         return type: NamedTuple with fields
             multi_hand_landmarks - 21 hand landmarks where each landmark is composed of x, y and z.
@@ -48,6 +51,8 @@ class MediaPipe:
         """
         Identical to process_from_path except for the argument:
         :param img: the image from which to recognize landmarks
+        :param brightness: the additional brightness of the image
+        :param rotation: the rotation that should be applied to the image
         :return: recognition results, same as in process_from_path
         """
         # Read an image, flip it around y-axis for correct handedness output.
@@ -64,12 +69,18 @@ class MediaPipe:
         :param img_path: the path to the image from which to read the landmarks
         :return: a numpy array of landmarks
         """
-        detected_hands = self.process_from_path(img_path).multi_hand_landmarks
+        image = cv.imread(img_path)
 
-        if detected_hands is None:
-            raise NoHandDetectedException(f'No hand has been detected for {img_path}')
+        self.pipeline.total += 1
+        for stage in self.pipeline.stages:
+            converted_image = stage.process(image)
 
-        return self.get_landmarks_from_hands(detected_hands)
+            detected_hands = self.process_from_image(converted_image).multi_hand_landmarks
+            if detected_hands is not None:
+                stage.recognized_counter += 1
+                return self.get_landmarks_from_hands(detected_hands)
+
+        raise NoHandDetectedException(f'No hand has been detected for {img_path}')
 
     def get_world_landmarks(self, img_path: str) -> np.array:
         """
@@ -77,12 +88,20 @@ class MediaPipe:
         :param img_path: the path to the image from which to read the landmarks
         :return: a numpy array of landmarks
         """
-        detected_hands = self.process_from_path(img_path).multi_hand_world_landmarks
+        image = cv.imread(img_path)
 
-        if detected_hands is None:
-            raise NoHandDetectedException(f'No hand has been detected for {img_path}')
+        self.pipeline.total += 1
+        for stage in self.pipeline.stages:
+            converted_image = stage.process(image)
 
-        return self.get_landmarks_from_hands(detected_hands)
+            detected_hands = self.process_from_image(converted_image).multi_hand_world_landmarks
+            if detected_hands is not None:
+                stage.recognized_counter += 1
+                return self.get_landmarks_from_hands(detected_hands)
+
+        filename = img_path.split('/')[-1]
+        cv.imwrite('data/kenyan/out/' + filename, image)
+        raise NoHandDetectedException(f'No hand has been detected for {img_path}')
 
     def get_landmarks_from_hands(self, detected_hands) -> np.array:
         """

@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 
 from feature_extraction.mediapipe_landmarks import MediaPipe
+from feature_extraction.pipeline import Pipeline
 from load_data.base_loader import BaseLoader
 
 
@@ -11,12 +12,12 @@ class WithLabelsLoader(BaseLoader):
     Retrieves landmarks from folder with images.
     """
 
-    def __init__(self, path: str, num_hands: int = 2):
+    def __init__(self, pipeline: Pipeline, path: str, num_hands: int = 2, verbose: bool = True):
         """
         :param path: path to dataset's main folder
         :param num_hands: the number of hands to detect
         """
-        super().__init__(path, num_hands)
+        super().__init__(pipeline, path, num_hands, verbose)
 
     def create_landmarks(self, labels: pd.DataFrame, output_file='landmarks.csv'):
         """
@@ -28,12 +29,12 @@ class WithLabelsLoader(BaseLoader):
         :param output_file: the file path of the file to write to
         :return: None
         """
-        files = self.path + labels['path']
+        files = self.path + labels['path'] + '.jpg'
 
-        self.mp = MediaPipe(self.num_hands)
+        self.mp = MediaPipe(self.pipeline, self.num_hands)
 
         results = []
-        for f in files:
+        for i, f in enumerate(files):
             results.append(self.create_landmarks_for_image(f))
 
         # Replace with 0s to keep the correct order with respect to the labels file

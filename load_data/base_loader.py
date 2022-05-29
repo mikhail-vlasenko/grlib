@@ -2,6 +2,7 @@ from typing import List
 import pandas as pd
 
 from exceptions import NoHandDetectedException
+from feature_extraction.pipeline import Pipeline
 
 
 class BaseLoader(object):
@@ -9,10 +10,12 @@ class BaseLoader(object):
     Retrieves landmarks from folder with images.
     """
 
-    def __init__(self, path: str, num_hands: int = 2):
+    def __init__(self, pipeline: Pipeline, path: str, num_hands: int = 2, verbose: bool = True):
         """
         :param path: path to dataset's main folder
         """
+        self.verbose = verbose
+        self.pipeline = pipeline
         self.num_hands = num_hands
         self.mp = None
         if path[-1] != '/':
@@ -27,9 +30,12 @@ class BaseLoader(object):
         """
         try:
             result = self.mp.get_world_landmarks(file_path).flatten().tolist()
+            self.pipeline.optimize()
+            if self.verbose:
+                print('\r' + str(self.pipeline), end='')
             return result
         except NoHandDetectedException as e:
-            print(str(e))
+            # print(str(e))
             return list()
 
     def load_landmarks(self, file='landmarks.csv') -> pd.DataFrame:

@@ -1,4 +1,5 @@
 from feature_extraction.mediapipe_landmarks import MediaPipe
+from feature_extraction.pipeline import Pipeline
 from load_data.by_folder_loader import ByFolderLoader
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -7,15 +8,31 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score
 
 # Some notes: add a pipeline, speed up mediapipe
+from load_data.with_labels_loader import WithLabelsLoader
+from preprocessing.all_landmarks import drop_invalid
 
 if __name__ == '__main__':
-    loader = ByFolderLoader('out/', 1)
-    loader.create_landmarks()
+    pipeline = Pipeline()
+    pipeline.add_stage()
+    pipeline.add_stage(0, 30)
+    pipeline.add_stage(0, -30)
+    pipeline.add_stage(0, 15)
+    pipeline.add_stage(0, -15)
+    pipeline.add_stage(60)
+    pipeline.add_stage(30)
 
-    data = loader.load_landmarks()
-    X = data.iloc[:, :63]
+    loader = WithLabelsLoader(pipeline, 'data/kenyan/images', 2)
+    labels = pd.read_csv('data/kenyan/Train.csv')
+    loader.create_landmarks(labels)
+
+    # loader = ByFolderLoader(pipeline, 'data/asl_alphabet_train', 1)
+    # loader.create_landmarks()
+
+    data = loader.load_landmarks('landmarks_2hands_train.csv')
+    X = data.iloc[:, :126]
     y = data['label']
     print(X.head())
+    print(len(X))
     print(y.head())
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
