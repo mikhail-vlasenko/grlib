@@ -9,22 +9,27 @@ from sklearn.metrics import accuracy_score
 # Some notes: add a pipeline, speed up mediapipe
 
 if __name__ == '__main__':
-    loader = ByFolderLoader('out/', 1)
-    loader.create_landmarks()
+    loader = ByFolderLoader('data/rotations', 1)
+    #loader.create_landmarks()
 
     data = loader.load_landmarks()
     X = data.iloc[:, :63]
     y = data['label']
-    print(X.head())
-    print(y.head())
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    mp = MediaPipe(1)
+    mp.show_landmarks('data/rotations/thumb/thumb2.jpg')
+    mp.show_landmarks('data/rotations/stop/Photo on 31.05.2022 at 13.23 #2.jpg')
 
-    print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
-
-    model = KNeighborsClassifier(5)
-    model.fit(X_train, y_train)
-
-    preds = model.predict(X_test)
-    print(preds, y_test.to_numpy())
-    print(accuracy_score(preds, y_test))
+    # print(X.head())
+    # print(y.head())
+    #
+    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    #
+    # print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
+    #
+    # model = KNeighborsClassifier(5)
+    # model.fit(X_train, y_train)
+    #
+    # preds = model.predict(X_test)
+    # print(preds, y_test.to_numpy())
+    # print(accuracy_score(preds, y_test))
