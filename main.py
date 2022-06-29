@@ -7,7 +7,6 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score
 
-# Some notes: add a pipeline, speed up mediapipe
 from load_data.with_labels_loader import WithLabelsLoader
 from preprocessing.all_landmarks import drop_invalid
 

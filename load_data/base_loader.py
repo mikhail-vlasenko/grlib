@@ -12,7 +12,9 @@ class BaseLoader(object):
 
     def __init__(self, pipeline: Pipeline, path: str, verbose: bool = True):
         """
+        :param pipeline: the pipeline the loader should use to detect landmarks
         :param path: path to dataset's main folder
+        :param verbose: whether to display the pipeline after each step
         """
         self.verbose = verbose
         self.pipeline = pipeline
@@ -28,7 +30,7 @@ class BaseLoader(object):
         :return: - the list of landmarks detected by MediaPipe or an empty list if no landmarks were found
         """
         try:
-            result = self.pipeline.get_world_landmarks(file_path).flatten().tolist()
+            result = self.pipeline.get_world_landmarks_from_path(file_path).flatten().tolist()
             self.pipeline.optimize()
             if self.verbose:
                 print('\r' + str(self.pipeline), end='')
