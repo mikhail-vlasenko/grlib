@@ -1,5 +1,5 @@
 from multiprocessing.pool import ThreadPool
-from typing import List
+from typing import List, Iterator, Generator
 
 import numpy as np
 from exceptions import NoHandDetectedException
@@ -8,7 +8,7 @@ from feature_extraction.stage import Stage
 import cv2.cv2 as cv
 
 
-def run_stage_landmarks(zipped):
+def run_stage_landmarks(zipped: zip):
     """
     Helper method to run get_landmarks from each stage with ThreadPool.
     :param zipped: a zip object of stage and image that the stage should process
@@ -17,7 +17,7 @@ def run_stage_landmarks(zipped):
     stage.get_landmarks(image)
 
 
-def run_stage_world_landmarks(zipped):
+def run_stage_world_landmarks(zipped: zip):
     """
     Helper method to run get_world_landmarks from each stage with ThreadPool.
     :param zipped: a zip object of stage and image that the stage should process
