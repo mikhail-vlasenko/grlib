@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import numpy as np
 
 from feature_extraction.mediapipe_landmarks import MediaPipe
