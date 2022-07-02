@@ -1,4 +1,6 @@
+from exceptions import NoHandDetectedException
 from feature_extraction.mediapipe_landmarks import MediaPipe
+from feature_extraction.pipeline import Pipeline
 from load_data.by_folder_loader import ByFolderLoader
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
@@ -7,7 +9,14 @@ import cv2 as cv
 import numpy as np
 
 if __name__ == '__main__':
-    loader = ByFolderLoader('out')
+    pipeline = Pipeline(1)
+    pipeline.add_stage(0, 0)
+    pipeline.add_stage(30, 0)
+    pipeline.add_stage(60, 0)
+    pipeline.add_stage(30, -15)
+    pipeline.add_stage(30, 15)
+
+    loader = ByFolderLoader(pipeline, 'out')
     loader.create_landmarks()
 
     data = loader.load_landmarks()
@@ -40,29 +49,18 @@ if __name__ == '__main__':
         if cv.waitKey(1) & 0xFF == ord('q'):
             break
 
-        landmarks = loader.mp.process_from_image(frame).multi_hand_world_landmarks
+        try:
+            landmarks = pipeline.get_world_landmarks_from_image(frame).flatten().tolist()
+            pipeline.optimize()
 
-        if landmarks is None:
+            prediction = model.predict(np.array([landmarks]))
+
+            cv.putText(frame, f'Class: {prediction[0]}', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
+
+            cv.imshow('Frame', frame)
+        except NoHandDetectedException as e:
             cv.putText(frame, 'No hand detected', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
 
             cv.imshow('Frame', frame)
 
-            if cv.waitKey(1) & 0xFF == ord('q'):
-                break
-
-            continue
-
-        hand = landmarks[0].landmark
-
-        point_array = []
-        for point in hand:
-            point_array.extend([point.x, point.y, point.z])
-
-        prediction = model.predict(np.array([point_array]))
-
-        cv.putText(frame, f'Class: {prediction[0]}', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
-
-        cv.imshow('Frame', frame)
-
-        if cv.waitKey(1) & 0xFF == ord('q'):
-            break
+        print('\r' + str(pipeline), end='')

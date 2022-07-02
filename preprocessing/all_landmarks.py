@@ -7,7 +7,7 @@ def is_zeros(data):
     :param data: the data to check for empty landmarks
     :return: the indexes where all columns are 0s (meaning no landmarks)
     """
-    return (data == 0).all(axis=1)
+    return (data.iloc[:, :-2] == 0).all(axis=1)
 
 
 def drop_invalid(df: pd.DataFrame) -> pd.DataFrame:
