@@ -11,7 +11,8 @@ import cv2.cv2 as cv
 def run_stage_landmarks(zipped: (Stage, np.ndarray)):
     """
     Helper method to run get_landmarks from each stage with ThreadPool.
-    :param zipped: a zip object of stage and image that the stage should process
+    :param zipped: a tuple object of stage and image that the stage should process. Passed
+    automatically by ThreadPool.
     """
     stage, image = zipped
     stage.get_landmarks(image)
@@ -20,7 +21,8 @@ def run_stage_landmarks(zipped: (Stage, np.ndarray)):
 def run_stage_world_landmarks(zipped: (Stage, np.ndarray)):
     """
     Helper method to run get_world_landmarks from each stage with ThreadPool.
-    :param zipped: a zip object of stage and image that the stage should process
+    :param zipped: a tuple object of stage and image that the stage should process. Passed
+    automatically by ThreadPool.
     """
     stage, image = zipped
     stage.get_world_landmarks(image)
