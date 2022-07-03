@@ -1,7 +1,7 @@
 from exceptions import NoHandDetectedException
-from feature_extraction.mediapipe_landmarks import MediaPipe
-from feature_extraction.pipeline import Pipeline
-from load_data.by_folder_loader import ByFolderLoader
+from src.feature_extraction.mediapipe_landmarks import MediaPipe
+from src.feature_extraction.pipeline import Pipeline
+from src.load_data.by_folder_loader import ByFolderLoader
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
@@ -16,7 +16,7 @@ if __name__ == '__main__':
     pipeline.add_stage(30, -15)
     pipeline.add_stage(30, 15)
 
-    loader = ByFolderLoader(pipeline, 'out')
+    loader = ByFolderLoader(pipeline, '../out')
     loader.create_landmarks()
 
     data = loader.load_landmarks()
