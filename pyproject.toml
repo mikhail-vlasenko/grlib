@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "grlib"
-version = "1.0.0"
+version = "1.0.2"
 description = "Gesture recognition library for Python"
 readme = "README.md"
 authors = [{ name = "Jan Warchocki", email = "j.warchocki@student.tudelft.nl" },
@@ -20,10 +20,10 @@ dependencies = [
     "pandas ~= 1.3.4",
     "mediapipe ~= 0.8.9",
     "sklearn ~= 0.0",
-    "opencv-contrib-python ~= 4.6.4.50",
+    "opencv-contrib-python ~= 4.5.4.50",
     "imutils ~= 0.5.4",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.8"
 
 [project.urls]
 Homepage = "https://github.com/mikhail-vlasenko/grlib"
