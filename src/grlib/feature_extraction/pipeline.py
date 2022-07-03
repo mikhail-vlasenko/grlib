@@ -2,9 +2,9 @@ from multiprocessing.pool import ThreadPool
 from typing import List
 
 import numpy as np
-from src.exceptions import NoHandDetectedException
-from src.feature_extraction.mediapipe_landmarks import MediaPipe
-from src.feature_extraction.stage import Stage
+from src.grlib.exceptions import NoHandDetectedException
+from src.grlib.feature_extraction.mediapipe_landmarks import MediaPipe
+from src.grlib.feature_extraction.stage import Stage
 import cv2.cv2 as cv
 
 

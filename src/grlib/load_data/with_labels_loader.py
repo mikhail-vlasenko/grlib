@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from src.feature_extraction.pipeline import Pipeline
-from src.load_data.base_loader import BaseLoader
+from ..feature_extraction.pipeline import Pipeline
+from ..load_data.base_loader import BaseLoader
 
 
 class WithLabelsLoader(BaseLoader):
