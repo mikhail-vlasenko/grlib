@@ -47,7 +47,7 @@ class ByFolderLoader(BaseLoader):
             results = [result for result in results if len(result) > 0]
 
             for result in results:
-                result.append(i)
+                result.append(folder)
 
             data.extend(results)
 
