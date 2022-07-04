@@ -1,7 +1,7 @@
 import numpy as np
 
-from feature_extraction.mediapipe_landmarks import MediaPipe
-from preprocessing.images import increase_brightness, rotate
+from ..feature_extraction.mediapipe_landmarks import MediaPipe
+from ..preprocessing.images import increase_brightness, rotate
 
 
 class Stage(object):

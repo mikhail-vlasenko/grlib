@@ -1,8 +1,8 @@
 from typing import List
 import pandas as pd
 
-from exceptions import NoHandDetectedException
-from feature_extraction.pipeline import Pipeline
+from ..exceptions import NoHandDetectedException
+from ..feature_extraction.pipeline import Pipeline
 
 
 class BaseLoader(object):

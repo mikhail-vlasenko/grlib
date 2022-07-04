@@ -2,9 +2,8 @@ import os
 import numpy as np
 import pandas as pd
 
-from feature_extraction.mediapipe_landmarks import MediaPipe
-from feature_extraction.pipeline import Pipeline
-from load_data.base_loader import BaseLoader
+from ..feature_extraction.pipeline import Pipeline
+from ..load_data.base_loader import BaseLoader
 
 
 class ByFolderLoader(BaseLoader):
@@ -48,7 +47,7 @@ class ByFolderLoader(BaseLoader):
             results = [result for result in results if len(result) > 0]
 
             for result in results:
-                result.append(i)
+                result.append(folder)
 
             data.extend(results)
 

@@ -1,10 +1,10 @@
 from multiprocessing.pool import ThreadPool
-from typing import List, Iterator, Generator
+from typing import List
 
 import numpy as np
-from exceptions import NoHandDetectedException
-from feature_extraction.mediapipe_landmarks import MediaPipe
-from feature_extraction.stage import Stage
+from ..exceptions import NoHandDetectedException
+from ..feature_extraction.mediapipe_landmarks import MediaPipe
+from ..feature_extraction.stage import Stage
 import cv2.cv2 as cv
 
 
