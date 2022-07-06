@@ -4,17 +4,17 @@ import numpy as np
 def best_fit_transform(cloud1: np.array, cloud2: np.array):
     """
     Calculates the least-squares best-fit transform that maps
-        corresponding points A to B in m spatial dimensions
-    Input:
-      A: Nxm numpy array of corresponding points
-      B: Nxm numpy array of corresponding points
-    Returns:
-      T: (m+1)x(m+1) homogeneous transformation matrix that maps A on to B
-      R: mxm rotation matrix
-      t: mx1 translation vector
+    corresponding points from cloud1 to cloud2 in M spatial dimensions
+    :param cloud1: NxM numpy array of points
+    :param cloud2: NxM numpy array of points
+    :return: a tuple of
+        (M+1)x(M+1) homogeneous transformation matrix
+        MxM rotation matrix
+        Mx1 translation vector
     """
 
-    assert cloud1.shape == cloud2.shape
+    if cloud1.shape != cloud2.shape:
+        raise ValueError
 
     # get number of dimensions
     m = cloud1.shape[1]
@@ -51,53 +51,66 @@ def distance(p1, p2):
 
 
 def corresponding_landmark(src, dst):
+    """
+    Distances to corresponding points.
+    :param src: points to be
+    :param dst:
+    :return:
+    """
     distances = np.empty(src.shape[0])
     for i in range(src.shape[0]):
         distances[i] = distance(src[i], dst[i])
     return distances, np.arange(0, src.shape[0])
 
 
-def point_correspondence_icp(A, B, init_pose=None, max_iterations=20, tolerance=0.001):
+def point_correspondence_icp(
+        to_transform,
+        anchor,
+        init_pose=None,
+        max_iterations=20,
+        tolerance=0.001
+):
     """
-    The Iterative Closest Point method: finds best-fit transform that maps points A on to points B
-    Input:
-        A: Nxm numpy array of source mD points
-        B: Nxm numpy array of destination mD point
-        init_pose: (m+1)x(m+1) homogeneous transformation
-        max_iterations: exit algorithm after max_iterations
-        tolerance: convergence criteria
-    Output:
-        T: final homogeneous transformation that maps A on to B
-        distances: Euclidean distances (errors) of the nearest neighbor
-        i: number of iterations to converge
+    The Iterative Closest Point method: finds best-fit transform that maps one cloud of point
+    onto another.
+    :param to_transform: NxM numpy array of source M-dimensional points
+    :param anchor: NxM numpy array of destination M-dimensional points
+    :param init_pose: (M+1)x(M+1) homogeneous transformation
+    :param max_iterations: exit algorithm after max_iterations
+    :param tolerance: convergence criteria
+    :return: a tuple of:
+        the final homogeneous transformation that maps first cloud onto the anchor
+        distances between points after the last iteration
     """
 
-    assert A.shape == B.shape
+    if to_transform.shape != anchor.shape or max_iterations < 1:
+        raise ValueError
 
     # get number of dimensions
-    m = A.shape[1]
+    m = to_transform.shape[1]
 
     # make points homogeneous, copy them to maintain the originals
-    src = np.ones((m + 1, A.shape[0]))
-    dst = np.ones((m + 1, B.shape[0]))
-    src[:m, :] = np.copy(A.T)
-    dst[:m, :] = np.copy(B.T)
+    src = np.ones((m + 1, to_transform.shape[0]))
+    dst = np.ones((m + 1, anchor.shape[0]))
+    src[:m, :] = np.copy(to_transform.T)
+    dst[:m, :] = np.copy(anchor.T)
 
     # apply the initial pose estimation
     if init_pose is not None:
         src = np.dot(init_pose, src)
 
     prev_error = 0
+    distances = np.zeros(m)
 
     for i in range(max_iterations):
         # find the nearest neighbors between the current source and destination points
         distances, indices = corresponding_landmark(src[:m, :].T, dst[:m, :].T)
 
         # compute the transformation between the current source and nearest destination points
-        T, _, _ = best_fit_transform(src[:m, :].T, dst[:m, indices].T)
+        transform_matrix, _, _ = best_fit_transform(src[:m, :].T, dst[:m, indices].T)
 
         # update the current source
-        src = np.dot(T, src)
+        src = np.dot(transform_matrix, src)
 
         # check error
         mean_error = np.mean(distances)
@@ -106,6 +119,6 @@ def point_correspondence_icp(A, B, init_pose=None, max_iterations=20, tolerance=
         prev_error = mean_error
 
     # calculate final transformation
-    T, _, _ = best_fit_transform(A, src[:m, :].T)
+    transform_matrix, _, _ = best_fit_transform(to_transform, src[:m, :].T)
 
-    return T, distances, i
+    return transform_matrix, distances
