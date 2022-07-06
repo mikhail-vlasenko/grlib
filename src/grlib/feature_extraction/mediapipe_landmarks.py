@@ -1,15 +1,11 @@
 # cv2.cv2 because MediaPipe uses opencv-contrib
 from collections import namedtuple
-from itertools import permutations, combinations
 import cv2.cv2 as cv
 from mediapipe import solutions as mp
 import time
-import os
-from typing import NamedTuple, List
+from typing import NamedTuple
 
 import numpy as np
-
-from exceptions import NoHandDetectedException
 
 
 class MediaPipe:
@@ -26,6 +22,8 @@ class MediaPipe:
         """
         Performs landmark extraction.
         :param img_path: path to image for which to recognize landmarks
+        :param brightness: the additional brightness of the image
+        :param rotation: the rotation of the image in degrees
         :return: recognition results
         return type: NamedTuple with fields
             multi_hand_landmarks - 21 hand landmarks where each landmark is composed of x, y and z.
@@ -48,6 +46,8 @@ class MediaPipe:
         """
         Identical to process_from_path except for the argument:
         :param img: the image from which to recognize landmarks
+        :param brightness: the additional brightness of the image
+        :param rotation: the rotation that should be applied to the image
         :return: recognition results, same as in process_from_path
         """
         # Read an image, flip it around y-axis for correct handedness output.
@@ -57,32 +57,6 @@ class MediaPipe:
         results = self.hands.process(cv.cvtColor(image, cv.COLOR_BGR2RGB))
 
         return results
-
-    def get_landmarks(self, img_path: str) -> np.array:
-        """
-        Returns landmarks for only num_hands hands on 1 image.
-        :param img_path: the path to the image from which to read the landmarks
-        :return: a numpy array of landmarks
-        """
-        detected_hands = self.process_from_path(img_path).multi_hand_landmarks
-
-        if detected_hands is None:
-            raise NoHandDetectedException(f'No hand has been detected for {img_path}')
-
-        return self.get_landmarks_from_hands(detected_hands)
-
-    def get_world_landmarks(self, img_path: str) -> np.array:
-        """
-        Returns world landmarks for only num_hands hands on 1 image.
-        :param img_path: the path to the image from which to read the landmarks
-        :return: a numpy array of landmarks
-        """
-        detected_hands = self.process_from_path(img_path).multi_hand_world_landmarks
-
-        if detected_hands is None:
-            raise NoHandDetectedException(f'No hand has been detected for {img_path}')
-
-        return self.get_landmarks_from_hands(detected_hands)
 
     def get_landmarks_from_hands(self, detected_hands) -> np.array:
         """
