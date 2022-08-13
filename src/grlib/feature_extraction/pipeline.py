@@ -67,8 +67,8 @@ class Pipeline(object):
         Method that asynchronously launches all stages of the pipeline and gets the specified landmarks.
         The landmarks that should be extracted are communicated using the callback parameter.
         :param image: the image to run the pipeline on
-        :param callback: the method that should be run for each stage. For example run_stage_landmarks or
-        run_stage_world_landmarks
+        :param callback: the method that should be run for each stage.
+        For example run_stage_landmarks or run_stage_world_landmarks
         """
         # Reset last_detected_hands for every stage
         for stage in self.stages:

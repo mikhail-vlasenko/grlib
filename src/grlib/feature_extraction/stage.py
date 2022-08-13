@@ -16,7 +16,7 @@ class Stage(object):
         :param brightness: the brightness that will be added to each image
         :param rotation: the rotation that will be applied to each image
         """
-        self.mp = mp
+        self.mp: MediaPipe = mp
         self.initial_index = initial_index
         self.brightness = brightness
         self.rotation = rotation
