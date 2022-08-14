@@ -35,7 +35,7 @@ class GeneralDirectionBuilder:
         :param landmark_sequence: a sequence of landmarks from (sample) frames
         :return: the trajectory encoding as an array
         """
-        trajectory = [[] * self.dimensions]
+        trajectory = [[], [], []]
         last = self.hand_center(landmark_sequence[0])
         for landmark in landmark_sequence[1:]:
             for i in range(self.dimensions):
@@ -43,11 +43,11 @@ class GeneralDirectionBuilder:
                 lower_boundary = last[i] - self.zero_precision
                 upper_boundary = last[i] + self.zero_precision
                 if lower_boundary > current[i]:
-                    trajectory[i].append(Direction.DOWN)
+                    trajectory[i].append(Direction.DOWN.value)
                 elif upper_boundary < current[i]:
-                    trajectory[i].append(Direction.UP)
+                    trajectory[i].append(Direction.UP.value)
                 else:
-                    trajectory[i].append(Direction.STATIONARY)
+                    trajectory[i].append(Direction.STATIONARY.value)
         return GeneralDirectionBuilder.object_from_lists(trajectory)
 
     @staticmethod
@@ -59,5 +59,6 @@ class GeneralDirectionBuilder:
             np.array(trajectory_list[2])
         )
 
-    def hand_center(self, hand_landmarks):
-        return hand_landmarks[0]
+    @staticmethod
+    def hand_center(hand_landmarks):
+        return hand_landmarks[:3]
