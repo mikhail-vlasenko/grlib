@@ -13,7 +13,6 @@ class ByFolderLoader(BaseLoader):
     def __init__(self, pipeline: Pipeline, path: str, verbose: bool = True):
         """
         :param path: path to dataset's main folder
-        :param num_hands: the number of hands to detect
         """
         super().__init__(pipeline, path, verbose)
 
