@@ -5,6 +5,15 @@ import numpy as np
 from src.grlib.feature_extraction.mediapipe_landmarks import MediaPipe
 
 
+def remove_outliers(landmark_sequence: List[np.ndarray]) -> List[np.ndarray]:
+    """
+    Idea: if dist i-1 to i+1 is less than dist i-1 to i, then i is outlier
+    :param landmark_sequence:
+    :return:
+    """
+    pass
+
+
 def extract_key_frames(landmark_sequence: List[np.ndarray], target_len: int) -> List[int]:
     """
     Used only in training, as at runtime full frame list is not known due to absence of gesture
@@ -15,6 +24,7 @@ def extract_key_frames(landmark_sequence: List[np.ndarray], target_len: int) -> 
     :return: indexes of included frames
     """
     # todo: detect outliers
+
     displacements: List[float] = [0]
     last_pos = MediaPipe.hands_spacial_position(landmark_sequence[0])
 

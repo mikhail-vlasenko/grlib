@@ -75,7 +75,7 @@ class MediaPipe:
         return np.array(point_array)
 
     @staticmethod
-    def hands_spacial_position(landmarks) -> np.ndarray:
+    def hands_spacial_position(landmarks: np.ndarray) -> np.ndarray:
         """
         Encodes the hands position in the picture.
         Can be used to calculate the trajectory.
@@ -87,7 +87,8 @@ class MediaPipe:
         TODO: make a warning if dynamic gesture appears stationary
         :return: the encoding
         """
-        return landmarks[0]  # or whatever is the palm bottom
+        reshaped = landmarks.reshape((-1, 21, 3))
+        return np.mean(reshaped, axis=1)
 
     def show_landmarks(self, img_path, results=None):
         """

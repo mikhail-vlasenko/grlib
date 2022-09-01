@@ -3,6 +3,7 @@ from typing import List
 
 import numpy as np
 
+from src.grlib.feature_extraction.mediapipe_landmarks import MediaPipe
 from src.grlib.trajectory.general_direction_trajectory import GeneralDirectionTrajectory
 
 
@@ -29,17 +30,18 @@ class GeneralDirectionBuilder:
         self.dimensions = 3
         self.zero_precision = zero_precision
 
-    def make_trajectory(self, landmark_sequence) -> GeneralDirectionTrajectory:
+    def make_trajectory(self, landmark_sequence, hand_num=0) -> GeneralDirectionTrajectory:
         """
         Creates the trajectory
         :param landmark_sequence: a sequence of landmarks from (sample) frames
+        :param hand_num: index of hand to make the trajectory for
         :return: the trajectory encoding as an array
         """
         trajectory = [[], [], []]
-        last = self.hand_center(landmark_sequence[0])
+        last = MediaPipe.hands_spacial_position(landmark_sequence[0])[hand_num]
         for landmark in landmark_sequence[1:]:
             for i in range(self.dimensions):
-                current = self.hand_center(landmark)
+                current = MediaPipe.hands_spacial_position(landmark)[hand_num]
                 lower_boundary = last[i] - self.zero_precision
                 upper_boundary = last[i] + self.zero_precision
                 if lower_boundary > current[i]:
@@ -58,7 +60,3 @@ class GeneralDirectionBuilder:
             np.array(trajectory_list[1]),
             np.array(trajectory_list[2])
         )
-
-    @staticmethod
-    def hand_center(hand_landmarks):
-        return hand_landmarks[:3]

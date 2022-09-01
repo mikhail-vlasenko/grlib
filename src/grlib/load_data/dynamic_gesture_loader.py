@@ -38,7 +38,7 @@ class DynamicGestureLoader(BaseLoader):
 
     def create_landmarks(self, output_file='landmarks.csv'):
         """
-        Processes images of gestures and saves results to csv.
+        Processes images of gestures and saves shapes and trajectories to csv.
         Images are labelled with their folder's name.
         takes a while
         :param output_file: the file path of the file to write to
@@ -131,6 +131,14 @@ class DynamicGestureLoader(BaseLoader):
         if file is None:
             file = self.output_trajectory_name
         return pd.read_csv(self.path + file)
+
+    @staticmethod
+    def get_start_shape(hand_shape_df, num_hands):
+        """
+        Provides a part of the dataframe that has starting shapes of the hands
+        :return: the part of the dataframe
+        """
+        return hand_shape_df.iloc[:, :(63 * num_hands)]
 
     def _extract_prefix(self, file):
         return file.split(self.frame_set_separator)[0]
