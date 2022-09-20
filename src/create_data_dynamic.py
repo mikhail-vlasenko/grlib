@@ -4,11 +4,14 @@ import os
 import keyboard
 
 
-def save_image(image: np.array, y: str, frame_set: int, image_idx: int):
-    if not os.path.isdir(f'out/{y}'):
-        os.makedirs(f'out/{y}')
+target_dir = 'left_right_dataset'
 
-    file_path = f'out/{y}/{frame_set}_{image_idx}.jpg'
+
+def save_image(image: np.array, y: str, frame_set: int, image_idx: int):
+    if not os.path.isdir(f'{target_dir}/{y}'):
+        os.makedirs(f'{target_dir}/{y}')
+
+    file_path = f'{target_dir}/{y}/{frame_set}_{image_idx}.jpg'
 
     cv.imwrite(file_path, image)
     print(f'Saved image of class {y} to file {file_path}.')
@@ -17,11 +20,11 @@ def save_image(image: np.array, y: str, frame_set: int, image_idx: int):
 if __name__ == '__main__':
     camera = cv.VideoCapture(0)
 
-    cls = 'dynamic gesture 1'
+    cls = 'right'
 
     # it is necessary to differentiate between frames taken for different instances of the
     # dynamic gesture.
-    # continuous press of space makes one instance of the gesture
+    # continuous press of space key makes one instance of the gesture
     last_pressed = False
     frame_set_cnt = 0
     image_idx = 0

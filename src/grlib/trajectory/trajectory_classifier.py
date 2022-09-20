@@ -14,7 +14,6 @@ class TrajectoryClassifier:
             trajectories: Union[np.ndarray, List[np.ndarray]],
             gestures: Union[np.ndarray, List[str]]
     ):
-        # todo: average out the input trajectories, so that we only have a single trajectory per class
         # todo: make use of the GeneralDirectionTrajectory type?
         """
         Remembers correspondence between gestures classes and their trajectories
