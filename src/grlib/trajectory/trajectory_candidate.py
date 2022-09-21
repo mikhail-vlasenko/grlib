@@ -1,5 +1,4 @@
 import numpy as np
-from numpy import copy
 
 from src.grlib.trajectory.general_direction_builder import Direction
 

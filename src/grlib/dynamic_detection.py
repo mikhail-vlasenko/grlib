@@ -29,8 +29,13 @@ class DynamicDetector:
         self.frame_cnt = 0
         self.update_candidates_every = 10
         self.last_pred = ""
+        self.last_time_pred = 0
 
     def analyze_frame(self, frame):
+        self.frame_cnt += 1
+        if self.last_time_pred < self.frame_cnt - 60:
+            self.last_pred = ""
+
         landmarks = self.pipeline.get_world_landmarks_from_image(frame).flatten().tolist()
         self.pipeline.optimize()
 
@@ -53,14 +58,14 @@ class DynamicDetector:
             target_traj = self.trajectory_classifier.avg_trajectories[p]
             # todo: dont add if already exists a recent record
             self.current_candidates.append(TrajectoryCandidate(
-                target_traj, p, hand_position, 0.1, self.frame_cnt
+                target_traj, p, hand_position, 0.2, self.frame_cnt
             ))
 
-        self.frame_cnt += 1
         if self.frame_cnt % self.update_candidates_every:
             pred = self.update_candidates(hand_position)
             if pred != "":
                 self.last_pred = pred
+                self.last_time_pred = self.frame_cnt
 
         return possible_classes
 
@@ -68,8 +73,11 @@ class DynamicDetector:
         i = 0
         while i < len(self.current_candidates):
             candidate = self.current_candidates[i]
+            # otherwise too early to make a decision
             if candidate.timestamp < self.frame_cnt - self.update_candidates_every:
-                if not candidate.update(hand_position):
+                # a candidate may also be too old to be considered
+                if candidate.timestamp < self.frame_cnt - self.update_candidates_every * 5 or \
+                        not candidate.update(hand_position):
                     self.current_candidates.pop(i)
                     i -= 1
                 if candidate.valid:
