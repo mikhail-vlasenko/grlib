@@ -13,7 +13,8 @@ class ByFolderLoader(BaseLoader):
     def __init__(self, pipeline: Pipeline, path: str, verbose: bool = True):
         """
         :param path: path to dataset's main folder
-        :param num_hands: the number of hands to detect
+        :param path: the path to the folder containing all the classes
+        :param verbose: whether to display pipeline information when running
         """
         super().__init__(pipeline, path, verbose)
 
@@ -25,8 +26,6 @@ class ByFolderLoader(BaseLoader):
         :param output_file: the file path of the file to write to
         :return: None
         """
-
-        # Potential speed-up: create mp instance per thread - this should be thread safe
         data = []
         data_labels = [folder for folder in os.listdir(self.path) if os.path.isdir(self.path + folder)]
 

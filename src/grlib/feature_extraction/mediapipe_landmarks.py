@@ -16,7 +16,7 @@ class MediaPipe:
         self.num_hands = num_hands
         self.drawing = mp.drawing_utils
         self.drawing_styles = mp.drawing_styles
-        self.hands = mp.hands.Hands(static_image_mode=True, max_num_hands=self.num_hands, min_detection_confidence=0.5)
+        self.hands = mp.hands.Hands(static_image_mode=True, max_num_hands=self.num_hands, min_detection_confidence=0.1)
 
     def process_from_path(self, img_path: str) -> NamedTuple:
         """
