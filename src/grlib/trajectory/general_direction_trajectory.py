@@ -11,4 +11,15 @@ class GeneralDirectionTrajectory:
     z_directions: np.ndarray
 
     def to_np(self) -> np.ndarray:
-        return np.concatenate((self.x_directions, self.y_directions, self.z_directions), axis=0)
+        """
+        Coverts x = [1,1]; y = [0,0]; z = [0,0];
+        to [1 0 0 1 0 0]
+        :return:
+        """
+        return np.concatenate(
+            (
+                np.expand_dims(self.x_directions, axis=0),
+                np.expand_dims(self.y_directions, axis=0),
+                np.expand_dims(self.z_directions, axis=0)
+            ), axis=0
+        ).T.flatten()

@@ -33,6 +33,7 @@ class TrajectoryClassifier:
             value = np.array(value)
             # averaged trajectories are rounded to valid trajectories (-1, 0, 1 terms)
             self.avg_trajectories[key] = np.array(np.around(value.mean(axis=0)), dtype=int)
+        print(f'trajectories: {self.avg_trajectories}')
 
     def predict(self, given_trajectory) -> List[str]:
         """

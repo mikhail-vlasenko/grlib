@@ -49,3 +49,6 @@ class TrajectoryCandidate:
         self.target = self.target[3:]
         self.position = np.copy(position)
         return True
+
+    def __repr__(self):
+        return f'Candidate for {self.pred_class}: target={self.target}, position={self.position}'

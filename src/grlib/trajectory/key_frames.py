@@ -7,11 +7,24 @@ from src.grlib.feature_extraction.mediapipe_landmarks import MediaPipe
 
 def remove_outliers(landmark_sequence: List[np.ndarray]) -> List[np.ndarray]:
     """
-    Idea: if dist i-1 to i+1 is less than dist i-1 to i, then i is outlier
+    Idea: if dist i-1 to i+1 is less than dist i-1 to i or dist i to i+1, then i is outlier
     :param landmark_sequence:
     :return:
     """
-    pass
+    positions = []
+    for i in range(len(landmark_sequence)):
+        positions.append(MediaPipe.hands_spacial_position(landmark_sequence[i]))
+
+    non_outliers = [landmark_sequence[0]]
+    for i in range(1, len(landmark_sequence) - 1):
+        if min(_distance(positions[i-1], positions[i]), _distance(positions[i], positions[i+1])) > \
+                _distance(positions[i-1], positions[i+1]):
+            # outlier
+            continue
+        non_outliers.append(landmark_sequence[i])
+
+    non_outliers.append(landmark_sequence[-1])
+    return non_outliers
 
 
 def extract_key_frames(landmark_sequence: List[np.ndarray], target_len: int) -> List[int]:
@@ -23,14 +36,14 @@ def extract_key_frames(landmark_sequence: List[np.ndarray], target_len: int) -> 
     :param target_len: desired length of the sampled sequence
     :return: indexes of included frames
     """
-    # todo: detect outliers
+    landmark_sequence = remove_outliers(landmark_sequence)
 
     displacements: List[float] = [0]
     last_pos = MediaPipe.hands_spacial_position(landmark_sequence[0])
 
     for i in range(1, len(landmark_sequence)):
         pos = MediaPipe.hands_spacial_position(landmark_sequence[i])
-        displacements.append(np.linalg.norm(last_pos - pos))
+        displacements.append(_distance(last_pos, pos))
         last_pos = pos.copy()
 
     total = sum(displacements)
@@ -48,3 +61,7 @@ def extract_key_frames(landmark_sequence: List[np.ndarray], target_len: int) -> 
         key_frames.append(len(key_frames) - 1)
 
     return key_frames
+
+
+def _distance(pos1, pos2):
+    return np.linalg.norm(pos1 - pos2)
