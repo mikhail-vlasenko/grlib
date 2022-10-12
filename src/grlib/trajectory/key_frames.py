@@ -8,8 +8,8 @@ from src.grlib.feature_extraction.mediapipe_landmarks import MediaPipe
 def remove_outliers(landmark_sequence: List[np.ndarray]) -> List[np.ndarray]:
     """
     Idea: if dist i-1 to i+1 is less than dist i-1 to i or dist i to i+1, then i is outlier
-    :param landmark_sequence:
-    :return:
+    :param landmark_sequence: initial landmark sequence
+    :return: reduced sequence
     """
     positions = []
     for i in range(len(landmark_sequence)):

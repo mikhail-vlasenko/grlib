@@ -4,6 +4,10 @@ from src.grlib.trajectory.general_direction_builder import Direction
 
 
 class TrajectoryCandidate:
+    """
+    Tracks a path of the hand for a specific dynamic gesture.
+    If the path taken corresponds to the `target` path, the dynamic gesture is considered `valid`.
+    """
     def __init__(self, target, prediction_class, init_pos, zero_precision, start_timestamp: float):
         """
 
@@ -28,6 +32,9 @@ class TrajectoryCandidate:
 
     def update(self, position) -> bool:
         """
+        The remembered hand position (`self.position`) is compared to the most recent hand position.
+        If the direction matches whatever is necessary for the gesture,
+        the candidate's remaining directions (`self.target`) are reduced.
         Should be called every X frame (5, 10 or something)
         :param position: new hand position
         :return: if the trajectory may still be valid (but not necessarily IS valid)
