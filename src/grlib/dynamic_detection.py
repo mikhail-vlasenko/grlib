@@ -24,6 +24,7 @@ class DynamicDetector:
             trajectory_classifier: TrajectoryClassifier,
             update_candidates_every=10,
             candidate_zero_precision=0.1,
+            candidate_old_multiplier=5,
             verbose=False,
     ):
         """
@@ -41,6 +42,8 @@ class DynamicDetector:
             or the number of key frames is increased.
         :param candidate_zero_precision: displacement more than this (in image-relative coords)
             is considered movement for a candidate.
+        :param candidate_old_multiplier: after this multiplied by update_candidates_every,
+            the candidate is considered outdated and is dropped.
         :param verbose: whether to print debug info.
         """
         self.start_detection_model = LogisticRegression()
@@ -54,6 +57,7 @@ class DynamicDetector:
         self.frame_cnt = 0
         self.update_candidates_every = update_candidates_every
         self.candidate_zero_precision = candidate_zero_precision
+        self.candidate_old_multiplier = candidate_old_multiplier
         self.last_pred = ""
         self.last_time_pred = 0
 
@@ -152,6 +156,9 @@ class DynamicDetector:
         i = 0
         if self.verbose:
             print(f'Hand position for update: {hand_position}')
+
+        oldest_allowed_timestamp = self.frame_cnt - \
+                                   self.update_candidates_every * self.candidate_old_multiplier
         while i < len(self.current_candidates):
             candidate = self.current_candidates[i]
             # otherwise too early to make a decision
@@ -159,7 +166,7 @@ class DynamicDetector:
                 if self.verbose:
                     print(str(candidate))
                 # a candidate may also be too old to be considered
-                if candidate.timestamp < self.frame_cnt - self.update_candidates_every * 5 or \
+                if candidate.timestamp < oldest_allowed_timestamp or \
                         not candidate.update(hand_position):
                     self.current_candidates.pop(i)
                     i -= 1
