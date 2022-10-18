@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, Union
 
 import numpy as np
 
@@ -22,7 +22,7 @@ class GeneralDirectionBuilder:
     Composes a trajectory as a sequence of Direction enum(1/0/-1) on multiple axi.
     Inspired by https://ieeexplore-ieee-org.tudelft.idm.oclc.org/stamp/stamp.jsp?tp=&arnumber=485888
     """
-    def __init__(self, zero_precision=0.1):
+    def __init__(self, zero_precision: float = 0.1):
         """
 
         :param zero_precision: how much is considered "no movement on the axis"
@@ -32,7 +32,7 @@ class GeneralDirectionBuilder:
 
     def make_trajectory(
             self,
-            landmark_sequence: np.ndarray,
+            landmark_sequence: Union[np.ndarray, List[np.ndarray]],
             hand_num: int = 0
     ) -> GeneralDirectionTrajectory:
         """
