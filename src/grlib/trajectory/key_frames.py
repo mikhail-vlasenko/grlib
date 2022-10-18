@@ -7,7 +7,8 @@ from src.grlib.feature_extraction.mediapipe_landmarks import MediaPipe
 
 def remove_outliers(landmark_sequence: List[np.ndarray]) -> List[np.ndarray]:
     """
-    Idea: if dist i-1 to i+1 is less than dist i-1 to i or dist i to i+1, then i is outlier
+    Method: if dist i-1 to i+1 is less than dist i-1 to i and dist i to i+1, then i is outlier.
+    Where dist is the distance between hand positions on the frames.
     :param landmark_sequence: initial landmark sequence
     :return: reduced sequence
     """
@@ -29,6 +30,9 @@ def remove_outliers(landmark_sequence: List[np.ndarray]) -> List[np.ndarray]:
 
 def extract_key_frames(landmark_sequence: List[np.ndarray], target_len: int) -> List[int]:
     """
+    Reduces the amount of frames in the initial sequence to the target_len, based on the distance
+        between hand positions on the frames.
+    Ideally, the hand will travel the same distance between every 2 consecutive key frames.
     Used only in training, as at runtime full frame list is not known due to absence of gesture
     start/stop flags.
 
@@ -38,6 +42,7 @@ def extract_key_frames(landmark_sequence: List[np.ndarray], target_len: int) -> 
     """
     landmark_sequence = remove_outliers(landmark_sequence)
 
+    # compute displacements between neighboring frames
     displacements: List[float] = [0]
     last_pos = MediaPipe.hands_spacial_position(landmark_sequence[0])
 
@@ -47,6 +52,7 @@ def extract_key_frames(landmark_sequence: List[np.ndarray], target_len: int) -> 
         last_pos = pos.copy()
 
     total = sum(displacements)
+    # this is how often a key frame should be placed
     interval = total / (target_len - 1)
     running_sum = 0
     key_frames: List[int] = [0]
@@ -54,10 +60,12 @@ def extract_key_frames(landmark_sequence: List[np.ndarray], target_len: int) -> 
     for i in range(1, len(landmark_sequence)):
         running_sum += displacements[i]
         if running_sum >= interval:
+            # the total displacement up to this point is enough to consider this frame key
             key_frames.append(i)
             running_sum = 0
 
     if len(key_frames) < target_len:
+        # include the last frame if it wasn't
         key_frames.append(len(key_frames) - 1)
 
     return key_frames

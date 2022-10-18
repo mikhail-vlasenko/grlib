@@ -6,19 +6,20 @@ from src.grlib.trajectory.general_direction_trajectory import GeneralDirectionTr
 
 
 class TrajectoryClassifier:
-    def __init__(self):
+    def __init__(self, verbose=False):
         self.avg_trajectories: Dict[str, np.ndarray] = dict()
+        self.verbose = verbose
 
     def fit(
             self,
             trajectories: Union[np.ndarray, List[np.ndarray]],
-            gestures: Union[np.ndarray, List[str]]
+            gestures: Union[np.ndarray, List[str]],
     ):
         # todo: make use of the GeneralDirectionTrajectory type?
         """
         Remembers correspondence between gestures classes and their trajectories
+        :param trajectories: the trajectories for classification
         :param gestures: list of classification answers that the trajectories correspond to
-        :param trajectories:
         :return: None
         """
         assert len(gestures) == len(trajectories)
@@ -33,7 +34,9 @@ class TrajectoryClassifier:
             value = np.array(value)
             # averaged trajectories are rounded to valid trajectories (-1, 0, 1 terms)
             self.avg_trajectories[key] = np.array(np.around(value.mean(axis=0)), dtype=int)
-        print(f'trajectories: {self.avg_trajectories}')
+
+        if self.verbose:
+            print(f'trajectories: {self.avg_trajectories}')
 
     def predict(self, given_trajectory) -> List[str]:
         """

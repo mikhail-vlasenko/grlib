@@ -30,7 +30,11 @@ class GeneralDirectionBuilder:
         self.dimensions = 3
         self.zero_precision = zero_precision
 
-    def make_trajectory(self, landmark_sequence, hand_num=0) -> GeneralDirectionTrajectory:
+    def make_trajectory(
+            self,
+            landmark_sequence: np.ndarray,
+            hand_num: int = 0
+    ) -> GeneralDirectionTrajectory:
         """
         Creates the trajectory
         :param landmark_sequence: a sequence of landmarks from (sample) frames
@@ -53,7 +57,7 @@ class GeneralDirectionBuilder:
         return GeneralDirectionBuilder.object_from_lists(trajectory)
 
     @staticmethod
-    def object_from_lists(trajectory_list) -> GeneralDirectionTrajectory:
+    def object_from_lists(trajectory_list: List[List[Direction]]) -> GeneralDirectionTrajectory:
         return GeneralDirectionTrajectory(
             len(trajectory_list[0]),
             np.array(trajectory_list[0]),

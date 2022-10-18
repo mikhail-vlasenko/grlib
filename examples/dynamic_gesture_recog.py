@@ -10,7 +10,7 @@ from src.grlib.trajectory.trajectory_classifier import TrajectoryClassifier
 ZERO_PRECISION = 0.1
 
 if __name__ == '__main__':
-    num_hands = 2
+    num_hands = 1
     pipeline = Pipeline(num_hands)
     pipeline.add_stage(0, 0)
 

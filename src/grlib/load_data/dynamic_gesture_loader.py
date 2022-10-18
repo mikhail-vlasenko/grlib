@@ -13,6 +13,15 @@ from ..trajectory.key_frames import extract_key_frames
 class DynamicGestureLoader(BaseLoader):
     """
     Retrieves landmarks from folder with images.
+    1 instance of a dynamic gesture should be stored as a set of images.
+    To distinguish between gesture instances, a common prefix for an instance should be used.
+    Additionally, frames within an instance should be named in the alphabetical order.
+    As such, the images in a folder should be following a format:
+        - groupId1_frameId1
+        - groupId1_frameId2
+        - groupId2_frameId1
+        - groupId2_frameId2
+    where frameId1 is alphabetically less than frameId2, and _ is used as a separator.
     """
     def __init__(
             self,
@@ -20,18 +29,24 @@ class DynamicGestureLoader(BaseLoader):
             path: str,
             verbose: bool = True,
             key_frames: int = 3,
-            trajectory_zero_precision: float = 0.02,
-            # trajectory_dimensions: int = 3,
+            trajectory_zero_precision: float = 0.1,
             frame_set_separator: str = "_",
             output_trajectory_name: str = "trajectories.csv"
     ):
         """
+        :param pipeline: the pipeline for hand recognition
         :param path: path to dataset's main folder
+        :param verbose: whether to print debug info
+        :param key_frames: amount of key frames
+        :param trajectory_zero_precision: how much hand movement between 2 key frames
+        is enough to encode it non-stationary. Between 0 and 1, for a share of the frame dimension.
+        :param frame_set_separator: 1 dynamic gesture is a set of frames.
+        To separate different instances of gestures in a single class, the separator is used.
+        :param output_trajectory_name: name of file for trajectory dataset
         """
         super().__init__(pipeline, path, verbose)
         self.key_frames = key_frames
         self.trajectory_zero_precision = trajectory_zero_precision
-        # self.trajectory_dimensions = trajectory_dimensions
         self.frame_set_separator = frame_set_separator
         self.output_trajectory_name = output_trajectory_name
         self.trajectory_builder = GeneralDirectionBuilder(self.trajectory_zero_precision)
@@ -133,7 +148,7 @@ class DynamicGestureLoader(BaseLoader):
         return pd.read_csv(self.path + file)
 
     @staticmethod
-    def get_start_shape(hand_shape_df, num_hands):
+    def get_start_shape(hand_shape_df: pd.DataFrame, num_hands: int):
         """
         Provides a part of the dataframe that has starting shapes of the hands
         :return: the part of the dataframe
