@@ -23,14 +23,19 @@ class BaseLoader(object):
             path = path + '/'
         self.path = path
 
-    def create_landmarks_for_image(self, file_path) -> List[float]:
+    def create_landmarks_for_image(self, file_path, world_landmarks=True) -> List[float]:
         """
         Processes a single image and retrieves the landmarks of this image.
-        :param file_path: - the file path of the file to read
-        :return: - the list of landmarks detected by MediaPipe or an empty list if no landmarks were found
+        :param file_path: the file path of the file to read
+        :param world_landmarks: whether to return world landmarks (centered on the hand) or
+        landmarks relative to the image borders.
+        :return: the list of landmarks detected by MediaPipe or an empty list if no landmarks were found
         """
         try:
-            result = self.pipeline.get_world_landmarks_from_path(file_path).flatten().tolist()
+            if world_landmarks:
+                result = self.pipeline.get_world_landmarks_from_path(file_path).flatten().tolist()
+            else:
+                result = self.pipeline.get_landmarks_from_path(file_path).flatten().tolist()
             self.pipeline.optimize()
             if self.verbose:
                 print('\r' + str(self.pipeline), end='')

@@ -67,8 +67,8 @@ class Pipeline(object):
         Method that asynchronously launches all stages of the pipeline and gets the specified landmarks.
         The landmarks that should be extracted are communicated using the callback parameter.
         :param image: the image to run the pipeline on
-        :param callback: the method that should be run for each stage. For example run_stage_landmarks or
-        run_stage_world_landmarks
+        :param callback: the method that should be run for each stage.
+        For example run_stage_landmarks or run_stage_world_landmarks
         """
         # Reset last_detected_hands for every stage
         for stage in self.stages:
@@ -89,6 +89,7 @@ class Pipeline(object):
         Gets mediapipe hand landmarks from specified image path.
         :param img_path: path to image
         :return: the retrieved landmarks
+        :raise: NoHandDetectedException
         """
         image = cv.imread(img_path)
         hands = self.run_pipeline(image, run_stage_landmarks)
@@ -102,6 +103,7 @@ class Pipeline(object):
         Gets mediapipe world landmarks from specified image path.
         :param img_path: path to image
         :return: the retrieved landmarks
+        :raise: NoHandDetectedException
         """
         image = cv.imread(img_path)
         hands = self.run_pipeline(image, run_stage_world_landmarks)
@@ -115,6 +117,7 @@ class Pipeline(object):
         Gets mediapipe hand landmarks from specified image.
         :param image: the image to find landmarks on
         :return: the retrieved landmarks
+        :raise: NoHandDetectedException
         """
         hands = self.run_pipeline(image, run_stage_landmarks)
 
@@ -127,6 +130,7 @@ class Pipeline(object):
         Gets mediapipe world landmarks from specified image.
         :param image: the image to find landmarks on
         :return: the retrieved landmarks
+        :raise: NoHandDetectedException
         """
         hands = self.run_pipeline(image, run_stage_world_landmarks)
 

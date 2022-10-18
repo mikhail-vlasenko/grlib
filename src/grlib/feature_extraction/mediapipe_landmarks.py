@@ -74,6 +74,22 @@ class MediaPipe:
         point_array.extend([[0.0, 0.0, 0.0] for _ in range(21 * self.num_hands - len(point_array))])
         return np.array(point_array)
 
+    @staticmethod
+    def hands_spacial_position(landmarks: np.ndarray) -> np.ndarray:
+        """
+        Encodes the hands position in the picture.
+        Can be used to calculate the trajectory.
+        Warning: the coordinates of the given landmarks should not be centered on the hand itself.
+            Thus, "world_landmarks" are not acceptable.
+        :param landmarks: array of landmarks, like the result of get_landmarks_from_hands.
+        NOT world landmarks, as those are centered on the hand!
+        TODO: do we want to strictly differentiate between world and other landmarks?
+        TODO: make a warning if dynamic gesture appears stationary
+        :return: the encoding
+        """
+        reshaped = landmarks.reshape((-1, 21, 3))
+        return np.mean(reshaped, axis=1)
+
     def show_landmarks(self, img_path, results=None):
         """
         Creates debug files and pyplots of landmarks.
