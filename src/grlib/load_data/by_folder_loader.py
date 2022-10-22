@@ -27,7 +27,6 @@ class ByFolderLoader(BaseLoader):
         :return: None
         """
 
-        # Potential speed-up: create mp instance per thread - this should be thread safe
         data = []
         data_labels = [folder for folder in os.listdir(self.path) if os.path.isdir(self.path + folder)]
 
