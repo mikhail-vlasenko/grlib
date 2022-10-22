@@ -12,7 +12,9 @@ class ByFolderLoader(BaseLoader):
     """
     def __init__(self, pipeline: Pipeline, path: str, verbose: bool = True):
         """
+        :param pipeline: the pipeline to use to augment images
         :param path: path to dataset's main folder
+        :param verbose: whether to display pipeline information when running
         """
         super().__init__(pipeline, path, verbose)
 
@@ -25,7 +27,6 @@ class ByFolderLoader(BaseLoader):
         :return: None
         """
 
-        # Potential speed-up: create mp instance per thread - this should be thread safe
         data = []
         data_labels = [folder for folder in os.listdir(self.path) if os.path.isdir(self.path + folder)]
 
