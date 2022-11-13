@@ -33,9 +33,9 @@ class BaseLoader(object):
         """
         try:
             if world_landmarks:
-                result = self.pipeline.get_world_landmarks_from_path(file_path).flatten().tolist()
+                result = self.pipeline.get_world_landmarks_from_path(file_path)
             else:
-                result = self.pipeline.get_landmarks_from_path(file_path).flatten().tolist()
+                result = self.pipeline.get_landmarks_from_path(file_path)
             self.pipeline.optimize()
             if self.verbose:
                 print('\r' + str(self.pipeline), end='')

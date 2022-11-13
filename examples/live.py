@@ -53,7 +53,7 @@ if __name__ == '__main__':
             break
 
         try:
-            landmarks = pipeline.get_world_landmarks_from_image(frame).flatten().tolist()
+            landmarks = pipeline.get_world_landmarks_from_image(frame)
             pipeline.optimize()
 
             prediction = model.predict(np.array([landmarks]))
