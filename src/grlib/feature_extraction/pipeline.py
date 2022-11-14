@@ -96,7 +96,7 @@ class Pipeline(object):
 
         if hands is None:
             raise NoHandDetectedException(f'No hand detected for {img_path}')
-        return hands
+        return hands.flatten()
 
     def get_world_landmarks_from_path(self, img_path: str) -> np.ndarray:
         """
@@ -110,7 +110,7 @@ class Pipeline(object):
 
         if hands is None:
             raise NoHandDetectedException(f'No hand detected for {img_path}')
-        return hands
+        return hands.flatten()
 
     def get_landmarks_from_image(self, image: np.ndarray) -> np.ndarray:
         """
@@ -123,7 +123,7 @@ class Pipeline(object):
 
         if hands is None:
             raise NoHandDetectedException(f'No hand detected')
-        return hands
+        return hands.flatten()
 
     def get_world_landmarks_from_image(self, image: np.ndarray) -> np.ndarray:
         """
@@ -136,7 +136,7 @@ class Pipeline(object):
 
         if hands is None:
             raise NoHandDetectedException(f'No hand detected')
-        return hands
+        return hands.flatten()
 
     def __str__(self) -> str:
         """
