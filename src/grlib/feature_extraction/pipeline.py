@@ -84,7 +84,7 @@ class Pipeline(object):
                 stage.recognized_counter += 1
                 return stage.mp.get_landmarks_from_hands(detected_hands)
 
-    def get_landmarks_from_path(self, img_path: str) -> List[float]:
+    def get_landmarks_from_path(self, img_path: str) -> np.ndarray:
         """
         Gets mediapipe hand landmarks from specified image path.
         :param img_path: path to image
@@ -96,9 +96,9 @@ class Pipeline(object):
 
         if hands is None:
             raise NoHandDetectedException(f'No hand detected for {img_path}')
-        return hands.flatten().tolist()
+        return hands.flatten()
 
-    def get_world_landmarks_from_path(self, img_path: str) -> List[float]:
+    def get_world_landmarks_from_path(self, img_path: str) -> np.ndarray:
         """
         Gets mediapipe world landmarks from specified image path.
         :param img_path: path to image
@@ -110,9 +110,9 @@ class Pipeline(object):
 
         if hands is None:
             raise NoHandDetectedException(f'No hand detected for {img_path}')
-        return hands.flatten().tolist()
+        return hands.flatten()
 
-    def get_landmarks_from_image(self, image: np.ndarray) -> List[float]:
+    def get_landmarks_from_image(self, image: np.ndarray) -> np.ndarray:
         """
         Gets mediapipe hand landmarks from specified image.
         :param image: the image to find landmarks on
@@ -123,9 +123,9 @@ class Pipeline(object):
 
         if hands is None:
             raise NoHandDetectedException(f'No hand detected')
-        return hands.flatten().tolist()
+        return hands.flatten()
 
-    def get_world_landmarks_from_image(self, image: np.ndarray) -> List[float]:
+    def get_world_landmarks_from_image(self, image: np.ndarray) -> np.ndarray:
         """
         Gets mediapipe world landmarks from specified image.
         :param image: the image to find landmarks on
@@ -136,7 +136,7 @@ class Pipeline(object):
 
         if hands is None:
             raise NoHandDetectedException(f'No hand detected')
-        return hands.flatten().tolist()
+        return hands.flatten()
 
     def __str__(self) -> str:
         """

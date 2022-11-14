@@ -1,6 +1,6 @@
 from typing import List
 import pandas as pd
-
+import numpy as np
 from ..exceptions import NoHandDetectedException
 from ..feature_extraction.pipeline import Pipeline
 
@@ -23,7 +23,7 @@ class BaseLoader(object):
             path = path + '/'
         self.path = path
 
-    def create_landmarks_for_image(self, file_path, world_landmarks=True) -> List[float]:
+    def create_landmarks_for_image(self, file_path, world_landmarks=True) -> np.ndarray:
         """
         Processes a single image and retrieves the landmarks of this image.
         :param file_path: the file path of the file to read
@@ -44,7 +44,7 @@ class BaseLoader(object):
             # print(str(e))
             if self.verbose:
                 print('\r' + str(self.pipeline), end='')
-            return list()
+            return np.array([])
 
     def load_landmarks(self, file='landmarks.csv') -> pd.DataFrame:
         """
