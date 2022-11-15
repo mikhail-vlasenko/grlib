@@ -82,6 +82,8 @@ class Pipeline(object):
             detected_hands = stage.last_detected_hands
             if detected_hands is not None:
                 stage.recognized_counter += 1
+                print(stage.mp.get_handedness(stage.last_detected_handedness))
+                print(len(detected_hands))
                 return stage.mp.get_landmarks_from_hands(detected_hands)
 
     def get_landmarks_from_path(self, img_path: str) -> np.ndarray:
