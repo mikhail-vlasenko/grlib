@@ -14,9 +14,10 @@ def increase_brightness(image: np.ndarray, value: float = 30) -> np.ndarray:
     hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
     h, s, v = cv.split(hsv)
 
+    v = cv.add(v, value)
     lim = 255 - value
-    v[v > lim] = 255
-    v[v <= lim] += value
+    v[v > 255] = 255
+    v[v < 0] = 0
 
     final_hsv = cv.merge((h, s, v))
     img = cv.cvtColor(final_hsv, cv.COLOR_HSV2BGR)
