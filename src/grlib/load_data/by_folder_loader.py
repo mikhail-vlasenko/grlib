@@ -38,7 +38,7 @@ class ByFolderLoader(BaseLoader):
 
             results = []
             for file_idx, file in enumerate(files):
-                results.append(self.create_landmarks_for_image(file))
+                results.append(self.create_landmarks_for_image(file).tolist())
 
             if self.verbose:
                 print()

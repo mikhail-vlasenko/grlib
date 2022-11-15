@@ -15,7 +15,6 @@ def increase_brightness(image: np.ndarray, value: float = 30) -> np.ndarray:
     h, s, v = cv.split(hsv)
 
     v = cv.add(v, value)
-    lim = 255 - value
     v[v > 255] = 255
     v[v < 0] = 0
 
