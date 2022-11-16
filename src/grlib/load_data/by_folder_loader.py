@@ -47,7 +47,7 @@ class ByFolderLoader(BaseLoader):
 
             results: List[(np.ndarray, np.ndarray)] = []
             for file_idx, file in enumerate(files):
-                results.append(self.create_landmarks_for_image(file).tolist())
+                results.append(self.create_landmarks_for_image(file))
 
             if self.verbose:
                 print()
