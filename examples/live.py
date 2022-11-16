@@ -17,7 +17,7 @@ if __name__ == '__main__':
     pipeline.add_stage(30, -15)
     pipeline.add_stage(30, 15)
 
-    loader = ByFolderLoader(pipeline, '../data/ASL_Dataset/Train')
+    loader = ByFolderLoader(pipeline, '../data/live', max_hands=1)
     loader.create_landmarks()
 
     data = loader.load_landmarks()
@@ -53,13 +53,13 @@ if __name__ == '__main__':
             break
 
         try:
-            landmarks = pipeline.get_world_landmarks_from_image(frame)
+            landmarks, handedness = pipeline.get_world_landmarks_from_image(frame)
             pipeline.optimize()
 
             prediction = model.predict(np.expand_dims(landmarks, axis=0))
 
             if f.is_relevant(landmarks):
-                cv.putText(frame, f'Class: {prediction[0]}', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
+                cv.putText(frame, f'Class: {prediction[0]}, {handedness[0]}', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
             else:
                 cv.putText(frame, 'No gesture detected', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
 

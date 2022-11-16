@@ -31,7 +31,13 @@ class FalsePositiveFilter(object):
         Builds the representatives of each class. They are constructed by taking the mean of all landmarks
         within a class.
         """
-        groups = self.dataset.groupby('label')
+        # todo: use handedness
+        dataset = self.dataset
+        for col in self.dataset.columns:
+            if 'handedness' in col:
+                dataset = dataset.drop(col, axis=1)
+
+        groups = dataset.groupby('label')
         for name, group in groups:
             np_array = group.drop('label', axis=1).to_numpy()
             representative = np.mean(np_array, axis=0)
