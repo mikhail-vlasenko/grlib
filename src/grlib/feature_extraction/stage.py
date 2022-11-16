@@ -22,6 +22,7 @@ class Stage(object):
         self.rotation = rotation
         self.recognized_counter = 0
         self.last_detected_hands = None
+        self.last_detected_handedness = None
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
@@ -41,8 +42,10 @@ class Stage(object):
         :param image: the image to process
         """
         converted_image = self.process(image)
+        res = self.mp.process_from_image(converted_image)
 
-        self.last_detected_hands = self.mp.process_from_image(converted_image).multi_hand_landmarks
+        self.last_detected_hands = res.multi_hand_landmarks
+        self.last_detected_handedness = res.multi_handedness
 
     def get_world_landmarks(self, image: np.ndarray):
         """
@@ -51,6 +54,8 @@ class Stage(object):
         :param image: the image to process
         """
         converted_image = self.process(image)
+        res = self.mp.process_from_image(converted_image)
 
-        self.last_detected_hands = self.mp.process_from_image(converted_image).multi_hand_world_landmarks
+        self.last_detected_hands = res.multi_hand_world_landmarks
+        self.last_detected_handedness = res.multi_handedness
 
