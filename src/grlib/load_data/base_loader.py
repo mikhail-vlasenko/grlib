@@ -20,7 +20,6 @@ class BaseLoader(object):
         """
         self.verbose = verbose
         self.pipeline = pipeline
-        self.mp = None
         if path[-1] != '/':
             path = path + '/'
         self.path = path

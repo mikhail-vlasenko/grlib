@@ -15,14 +15,13 @@ class ByFolderLoader(BaseLoader):
     h1l1x, h1l1y, h1l1z, h1l2x, ..., h2l1x, ..., handedness1, handedness2, ..., label
     where h1l1x stands for x coordinate of the first landmark of the first hand
     """
-    def __init__(self, pipeline: Pipeline, path: str, max_hands: int, verbose: bool = True):
+    def __init__(self, pipeline: Pipeline, path: str, verbose: bool = True):
         """
         :param pipeline: the pipeline to use to augment images
         :param path: path to dataset's main folder
         :param verbose: whether to display pipeline information when running
         """
         super().__init__(pipeline, path, verbose)
-        self.max_hands = max_hands
 
     def create_landmarks(self, output_file='landmarks.csv'):
         """
@@ -62,8 +61,8 @@ class ByFolderLoader(BaseLoader):
 
         df1 = pd.DataFrame(np.array(landmarks))
         df2 = pd.DataFrame(np.array(handednesses))
-        df2.columns = [f'handedness {i}' for i in range(1, self.max_hands+1)]
-        df = pd.concat([df1, df2], axis=1)
+        df2.columns = [f'handedness {i}' for i in range(1, len(df2.columns)+1)]
+        df = df1.join(df2)
         df['label'] = np.array(labels)
 
         df.to_csv(self.path + output_file, index=False)

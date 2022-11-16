@@ -18,7 +18,7 @@ class DynamicDetector:
     """
     def __init__(
             self,
-            start_detection_model: sklearn.base.BaseEstimator,
+            start_detection_model,
             y: np.ndarray,
             pipeline: Pipeline,
             start_pos_confidence: float,
@@ -29,8 +29,7 @@ class DynamicDetector:
             verbose=False,
     ):
         """
-
-        :param start_shapes: landmarks of start positions.
+        :param start_detection_model: model to predict probabilities of the start shapes.
         :param y: classes for these landmarks.
         :param pipeline: recognition pipeline.
         :param start_pos_confidence: how much certainty on the start shape detection model
@@ -63,12 +62,19 @@ class DynamicDetector:
 
         self.verbose = verbose
 
-    def analyze_frame(self, landmarks: np.ndarray, hand_position: np.ndarray) -> List[str]:
+    def analyze_frame(
+            self, landmarks: np.ndarray, hand_position: np.ndarray, idle_frame=False
+    ) -> List[str]:
         """
         Runs the frame through the dynamic gesture recognition process.
         After execution, `self.last_pred` contains the most recently predicted class.
         `self.last_pred = ''` means no class is predicted.
 
+        :param landmarks: shape of the hand. Indifferent to its position within the frame.
+        :param hand_position: position of the hand within frame.
+            for idle frames, it might make sense to pass last recorded position.
+        :param idle_frame: if True, the landmarks and hands are not taken into account.
+            however, the inner counter records a time step
         :return: list of potential classes on this frame.
         :raise: NoHandDetectedException
         """
@@ -76,7 +82,9 @@ class DynamicDetector:
         if self.last_time_pred < self.frame_cnt - 30:
             self.last_pred = ""
 
-        possible_classes = self.add_candidates(landmarks, hand_position)
+        possible_classes = []
+        if not idle_frame:
+            possible_classes = self.add_candidates(landmarks, hand_position)
 
         if self.frame_cnt % self.update_candidates_every == 0:
             pred = self.update_candidates(hand_position)

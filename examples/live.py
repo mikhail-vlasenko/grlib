@@ -1,5 +1,4 @@
 from src.grlib.exceptions import NoHandDetectedException
-from src.grlib.feature_extraction.mediapipe_landmarks import MediaPipe
 from src.grlib.feature_extraction.pipeline import Pipeline
 from src.grlib.load_data.by_folder_loader import ByFolderLoader
 from src.grlib.filter.false_positive_filter import FalsePositiveFilter
@@ -13,7 +12,7 @@ if __name__ == '__main__':
     pipeline = Pipeline(1)
     pipeline.add_stage(0, 0)
 
-    loader = ByFolderLoader(pipeline, '../data/live', max_hands=1)
+    loader = ByFolderLoader(pipeline, '../data/live')
     loader.create_landmarks()
 
     data = loader.load_landmarks()
@@ -32,8 +31,6 @@ if __name__ == '__main__':
     print(accuracy_score(preds, y_test))
 
     camera = cv.VideoCapture(0)
-
-    loader.mp = MediaPipe()
 
     font = cv.FONT_HERSHEY_SIMPLEX
 
