@@ -91,11 +91,11 @@ class DynamicGestureLoader(BaseLoader):
                     image_landmarks = self.create_landmarks_for_image(
                         curr_path + files[i],
                         world_landmarks=False
-                    )
+                    )[0]
                     world_landmarks = self.create_landmarks_for_image(
                         curr_path + files[i],
                         world_landmarks=True
-                    )
+                    )[0]
                     # append only if recognized
                     if len(image_landmarks) > 0:
                         gesture_image_landmarks.append(np.array(image_landmarks))

@@ -19,7 +19,7 @@ class FalsePositiveFilter(object):
     Then compares every incoming sample using cosine or euclidean distance to the representative and
     if any representative is within `confidence`, the sample is marked as relevant.
     """
-
+    # todo: dont like that it takes a dataframe
     def __init__(self, dataset: pd.DataFrame, metric: str = 'cosine', confidence: float = 0.9):
         """
         :param dataset: the dataset of all classes. Requires the dataset to have a column 'label', which
@@ -44,7 +44,7 @@ class FalsePositiveFilter(object):
 
         handedness_df = pd.DataFrame(self.dataset['label'])
         for col in self.dataset.columns:
-            if 'handedness' in col:
+            if 'handedness' in str(col):
                 dataset = dataset.drop(col, axis=1)
                 handedness_df = pd.concat([handedness_df, self.dataset[col]], axis=1)
 
