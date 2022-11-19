@@ -1,4 +1,6 @@
 import os
+from typing import List
+
 import numpy as np
 import pandas as pd
 
@@ -9,6 +11,9 @@ from ..load_data.base_loader import BaseLoader
 class ByFolderLoader(BaseLoader):
     """
     Retrieves landmarks from folder with images.
+    Landmarks saving format:
+    h1l1x, h1l1y, h1l1z, h1l2x, ..., h2l1x, ..., handedness1, handedness2, ..., label
+    where h1l1x stands for x coordinate of the first landmark of the first hand
     """
     def __init__(self, pipeline: Pipeline, path: str, verbose: bool = True):
         """
@@ -27,7 +32,10 @@ class ByFolderLoader(BaseLoader):
         :return: None
         """
 
-        data = []
+        landmarks: List[np.ndarray] = []
+        handednesses: List[np.ndarray] = []
+        labels: List[str] = []
+
         data_labels = [folder for folder in os.listdir(self.path) if os.path.isdir(self.path + folder)]
 
         for i, folder in enumerate(data_labels):
@@ -36,24 +44,25 @@ class ByFolderLoader(BaseLoader):
 
             files = [curr_path + file for file in os.listdir(curr_path)]
 
-            results = []
+            results: List[(np.ndarray, np.ndarray)] = []
             for file_idx, file in enumerate(files):
-                results.append(self.create_landmarks_for_image(file).tolist())
+                results.append(self.create_landmarks_for_image(file))
 
             if self.verbose:
                 print()
 
-            # Remove the instances where no hand was detected
-            results = [result for result in results if len(result) > 0]
+            # Remove the instances where no hand was detected (have empty list for landmarks)
+            results = [result for result in results if len(result[0]) > 0]
 
             for result in results:
-                result.append(folder)
+                landmarks.append(result[0])
+                handednesses.append(result[1])
+                labels.append(folder)
 
-            data.extend(results)
+        df1 = pd.DataFrame(np.array(landmarks))
+        df2 = pd.DataFrame(np.array(handednesses))
+        df2.columns = [f'handedness {i}' for i in range(1, len(df2.columns)+1)]
+        df = df1.join(df2)
+        df['label'] = np.array(labels)
 
-        data = np.array(data)
-        df = pd.DataFrame(data)
-
-        # rename label column, others stay as numbers
-        df = df.rename(columns={len(df.columns)-1: "label"})
         df.to_csv(self.path + output_file, index=False)

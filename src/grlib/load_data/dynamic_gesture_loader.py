@@ -61,6 +61,7 @@ class DynamicGestureLoader(BaseLoader):
         """
         landmarks_results = []
         trajectory_results = []
+        handedness_results = []
         class_labels = []
 
         data_labels = [
@@ -68,6 +69,7 @@ class DynamicGestureLoader(BaseLoader):
             for folder in os.listdir(self.path)
             if os.path.isdir(self.path + folder)
         ]
+        # iter over labels
         for folder in data_labels:
             curr_path = self.path + folder + '/'
             print(f'Processing {curr_path}')
@@ -78,12 +80,14 @@ class DynamicGestureLoader(BaseLoader):
             files.sort()
 
             i = 0
+            # iter over dynamic gesture instances
             while i < len(files):
                 # guaranteed to go into the inner loop
                 prefix = self._extract_prefix(files[i])
 
                 gesture_image_landmarks = []
                 gesture_world_landmarks = []
+                handedness = None  # will be set to the value at the first frame
                 # capture one gesture instance
                 while i < len(files) and self._extract_prefix(files[i]) == prefix:
                     # extract both types of landmarks, as the first are necessary for trajectory,
@@ -91,11 +95,13 @@ class DynamicGestureLoader(BaseLoader):
                     image_landmarks = self.create_landmarks_for_image(
                         curr_path + files[i],
                         world_landmarks=False
-                    )
-                    world_landmarks = self.create_landmarks_for_image(
+                    )[0]
+                    world_landmarks, captured_handedness = self.create_landmarks_for_image(
                         curr_path + files[i],
                         world_landmarks=True
                     )
+                    if handedness is None:
+                        handedness = captured_handedness
                     # append only if recognized
                     if len(image_landmarks) > 0:
                         gesture_image_landmarks.append(np.array(image_landmarks))
@@ -120,15 +126,20 @@ class DynamicGestureLoader(BaseLoader):
 
                 landmarks_results.append(hand_shape_encoding)
                 trajectory_results.append(trajectory.to_np())
+                handedness_results.append(handedness)
                 # append folder name as class label
                 class_labels.append(folder)
 
         # covert to pandas
         hand_shape_df = pd.DataFrame(landmarks_results)
         trajectory_df = pd.DataFrame(trajectory_results)
+        handedness_df = pd.DataFrame(handedness_results)
+        handedness_df.columns = [f'handedness {i}' for i in range(1, len(handedness_df.columns)+1)]
+
         labels_df = pd.DataFrame(class_labels)
         labels_df.columns = ['label']
 
+        hand_shape_df = hand_shape_df.join(handedness_df)
         hand_shape_df = hand_shape_df.join(labels_df)
         trajectory_df = trajectory_df.join(labels_df)
 

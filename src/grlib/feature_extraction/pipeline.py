@@ -60,15 +60,18 @@ class Pipeline(object):
         Optimize the order of the pipeline.
         """
         if self.optimize_pipeline:
-            self.stages = sorted(self.stages, key=lambda stage: stage.recognized_counter, reverse=True)
+            self.stages = sorted(self.stages, key=lambda stage: stage.recognized_counter,
+                                 reverse=True)
 
-    def run_pipeline(self, image: np.ndarray, callback) -> np.ndarray:
+    def run_pipeline(self, image: np.ndarray, callback) -> (np.ndarray, np.ndarray):
         """
         Method that asynchronously launches all stages of the pipeline and gets the specified landmarks.
         The landmarks that should be extracted are communicated using the callback parameter.
         :param image: the image to run the pipeline on
         :param callback: the method that should be run for each stage.
         For example run_stage_landmarks or run_stage_world_landmarks
+        :return (landmarks of the detected hands, left/right of the detected hands called)
+        :raise: NoHandDetectedException
         """
         # Reset last_detected_hands for every stage
         for stage in self.stages:
@@ -82,61 +85,50 @@ class Pipeline(object):
             detected_hands = stage.last_detected_hands
             if detected_hands is not None:
                 stage.recognized_counter += 1
-                return stage.mp.get_landmarks_from_hands(detected_hands)
+                return stage.mp.get_landmarks_from_hands(detected_hands), \
+                       stage.mp.get_handedness(stage.last_detected_handedness)
 
-    def get_landmarks_from_path(self, img_path: str) -> np.ndarray:
+        raise NoHandDetectedException(f'No hand detected')
+
+    def get_landmarks_from_path(self, img_path: str) -> (np.ndarray, np.ndarray):
         """
         Gets mediapipe hand landmarks from specified image path.
         :param img_path: path to image
-        :return: the retrieved landmarks
+        :return: the retrieved landmarks and handedness
         :raise: NoHandDetectedException
         """
         image = cv.imread(img_path)
-        hands = self.run_pipeline(image, run_stage_landmarks)
+        return self.get_landmarks_from_image(image)
 
-        if hands is None:
-            raise NoHandDetectedException(f'No hand detected for {img_path}')
-        return hands.flatten()
-
-    def get_world_landmarks_from_path(self, img_path: str) -> np.ndarray:
+    def get_world_landmarks_from_path(self, img_path: str) -> (np.ndarray, np.ndarray):
         """
         Gets mediapipe world landmarks from specified image path.
         :param img_path: path to image
-        :return: the retrieved landmarks
+        :return: the retrieved landmarks and handedness
         :raise: NoHandDetectedException
         """
         image = cv.imread(img_path)
-        hands = self.run_pipeline(image, run_stage_world_landmarks)
+        return self.get_world_landmarks_from_image(image)
 
-        if hands is None:
-            raise NoHandDetectedException(f'No hand detected for {img_path}')
-        return hands.flatten()
-
-    def get_landmarks_from_image(self, image: np.ndarray) -> np.ndarray:
+    def get_landmarks_from_image(self, image: np.ndarray) -> (np.ndarray, np.ndarray):
         """
         Gets mediapipe hand landmarks from specified image.
         :param image: the image to find landmarks on
-        :return: the retrieved landmarks
+        :return: the retrieved landmarks and handedness
         :raise: NoHandDetectedException
         """
-        hands = self.run_pipeline(image, run_stage_landmarks)
+        hands, handedness = self.run_pipeline(image, run_stage_landmarks)
+        return hands.flatten(), handedness
 
-        if hands is None:
-            raise NoHandDetectedException(f'No hand detected')
-        return hands.flatten()
-
-    def get_world_landmarks_from_image(self, image: np.ndarray) -> np.ndarray:
+    def get_world_landmarks_from_image(self, image: np.ndarray) -> (np.ndarray, np.ndarray):
         """
         Gets mediapipe world landmarks from specified image.
         :param image: the image to find landmarks on
-        :return: the retrieved landmarks
+        :return: the retrieved landmarks and handedness
         :raise: NoHandDetectedException
         """
-        hands = self.run_pipeline(image, run_stage_world_landmarks)
-
-        if hands is None:
-            raise NoHandDetectedException(f'No hand detected')
-        return hands.flatten()
+        hands, handedness = self.run_pipeline(image, run_stage_world_landmarks)
+        return hands.flatten(), handedness
 
     def __str__(self) -> str:
         """
@@ -145,7 +137,8 @@ class Pipeline(object):
         """
         total_recognized = sum(stage.recognized_counter for stage in self.stages)
         recognition_rate = round(total_recognized / self.total * 100, 2)
-        order = ' -> '.join(f'{stage.initial_index} [{stage.recognized_counter}]' for stage in self.stages)
+        order = ' -> '.join(
+            f'{stage.initial_index} [{stage.recognized_counter}]' for stage in self.stages)
         order += f' -> fail [{self.total - total_recognized}]'
 
         return f'Recognized {total_recognized}/{self.total} [{recognition_rate}%]: pipeline = {order}'

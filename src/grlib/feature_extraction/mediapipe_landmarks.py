@@ -58,7 +58,7 @@ class MediaPipe:
 
         return results
 
-    def get_landmarks_from_hands(self, detected_hands) -> np.array:
+    def get_landmarks_from_hands(self, detected_hands) -> np.ndarray:
         """
         Returns a list of landmarks from the given processed list of hands.
         :param detected_hands: the hands as detected by mediapipe
@@ -73,6 +73,24 @@ class MediaPipe:
         # If less than num_hands hands were detected, fill in the rest of the list with zeros
         point_array.extend([[0.0, 0.0, 0.0] for _ in range(21 * self.num_hands - len(point_array))])
         return np.array(point_array)
+
+    def get_handedness(self, detected_hands) -> np.ndarray:
+        """
+        Returns a list of zeros or ones from the given processed list of hands.
+        Where 0 is Left hand, 1 is Right hand.
+        2 is placed to fill the array up to num_hands if there are not enough hands detected.
+        :param detected_hands: the hands as detected by mediapipe
+        :return: a list of integers from detected_hands
+        """
+        handedness = np.full(self.num_hands, 2)
+
+        for i in range(len(detected_hands)):
+            if detected_hands[i].classification[0].label == 'Left':
+                handedness[i] = 0
+            else:
+                handedness[i] = 1
+
+        return handedness
 
     @staticmethod
     def hands_spacial_position(landmarks: np.ndarray) -> np.ndarray:

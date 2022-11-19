@@ -3,6 +3,7 @@ from typing import List, Union
 import cv2.cv2 as cv
 import numpy as np
 import pandas as pd
+import sklearn.base
 from sklearn.linear_model import LogisticRegression
 
 from src.grlib.feature_extraction.mediapipe_landmarks import MediaPipe
@@ -17,7 +18,7 @@ class DynamicDetector:
     """
     def __init__(
             self,
-            start_shapes: Union[pd.DataFrame, np.ndarray],
+            start_detection_model,
             y: np.ndarray,
             pipeline: Pipeline,
             start_pos_confidence: float,
@@ -28,8 +29,7 @@ class DynamicDetector:
             verbose=False,
     ):
         """
-
-        :param start_shapes: landmarks of start positions.
+        :param start_detection_model: model to predict probabilities of the start shapes.
         :param y: classes for these landmarks.
         :param pipeline: recognition pipeline.
         :param start_pos_confidence: how much certainty on the start shape detection model
@@ -46,8 +46,7 @@ class DynamicDetector:
             the candidate is considered outdated and is dropped.
         :param verbose: whether to print debug info.
         """
-        self.start_detection_model = LogisticRegression()
-        self.start_detection_model.fit(np.array(start_shapes), y)
+        self.start_detection_model = start_detection_model
         self.sorted_labels = sorted(y.tolist())
         self.pipeline: Pipeline = pipeline
         self.start_pos_confidence = start_pos_confidence
@@ -63,15 +62,19 @@ class DynamicDetector:
 
         self.verbose = verbose
 
-    def analyze_frame(self, frame: np.ndarray, draw_hand_position=False) -> List[str]:
+    def analyze_frame(
+            self, landmarks: np.ndarray, hand_position: np.ndarray, idle_frame=False
+    ) -> List[str]:
         """
         Runs the frame through the dynamic gesture recognition process.
         After execution, `self.last_pred` contains the most recently predicted class.
         `self.last_pred = ''` means no class is predicted.
 
-        :param frame: the image. A circle to indicate the recognized hand position gets added.
-        :param draw_hand_position: If True, puts a circle on the frame at the detected location
-            of the hand.
+        :param landmarks: shape of the hand. Indifferent to its position within the frame.
+        :param hand_position: position of the hand within frame.
+            for idle frames, it might make sense to pass last recorded position.
+        :param idle_frame: if True, the landmarks and hands are not taken into account.
+            however, the inner counter records a time step
         :return: list of potential classes on this frame.
         :raise: NoHandDetectedException
         """
@@ -79,27 +82,9 @@ class DynamicDetector:
         if self.last_time_pred < self.frame_cnt - 30:
             self.last_pred = ""
 
-        # this can raise NoHandDetectedException
-        landmarks = self.pipeline.get_world_landmarks_from_image(frame).flatten().tolist()
-        self.pipeline.optimize()
-
-        # WARNING: this is for a single hand
-        hand_position = MediaPipe.hands_spacial_position(
-            self.pipeline.get_landmarks_from_image(frame)
-        )[0]
-
-        if draw_hand_position:
-            # draw the position of the hand
-            cv.circle(
-                frame,
-                (round((1 - hand_position[0]) * frame.shape[1]),
-                 round(hand_position[1] * frame.shape[0])),
-                10,
-                (0, 0, 255),
-                thickness=3,
-            )
-
-        possible_classes = self.add_candidates(landmarks, hand_position)
+        possible_classes = []
+        if not idle_frame:
+            possible_classes = self.add_candidates(landmarks, hand_position)
 
         if self.frame_cnt % self.update_candidates_every == 0:
             pred = self.update_candidates(hand_position)
@@ -177,3 +162,35 @@ class DynamicDetector:
                     return candidate.pred_class
             i += 1
         return ""
+
+    def extract_landmarks(
+            self, frame: np.ndarray, draw_hand_position: bool = False
+    ) -> (np.ndarray, np.ndarray, np.ndarray):
+        """
+
+        :param frame: the image. A circle to indicate the recognized hand position gets added.
+        :param draw_hand_position: If True, puts a circle on the frame at the detected location
+            of the hand.
+        :return:
+        """
+        # this can raise NoHandDetectedException
+        landmarks, handedness = self.pipeline.get_world_landmarks_from_image(frame)
+        self.pipeline.optimize()
+
+        # WARNING: this is for a single hand
+        hand_position = MediaPipe.hands_spacial_position(
+            # take [0] because we only need landmarks, not handedness
+            self.pipeline.get_landmarks_from_image(frame)[0]
+        )[0]
+
+        if draw_hand_position:
+            # draw the position of the hand, inplace
+            cv.circle(
+                frame,
+                (round((1 - hand_position[0]) * frame.shape[1]),
+                 round(hand_position[1] * frame.shape[0])),
+                10,
+                (0, 0, 255),
+                thickness=3,
+            )
+        return landmarks, handedness, hand_position

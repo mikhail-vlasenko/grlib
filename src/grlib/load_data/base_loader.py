@@ -18,18 +18,19 @@ class BaseLoader(object):
         """
         self.verbose = verbose
         self.pipeline = pipeline
-        self.mp = None
         if path[-1] != '/':
             path = path + '/'
         self.path = path
 
-    def create_landmarks_for_image(self, file_path, world_landmarks=True) -> np.ndarray:
+    def create_landmarks_for_image(self, file_path, world_landmarks=True) -> (np.ndarray, np.ndarray):
         """
         Processes a single image and retrieves the landmarks of this image.
         :param file_path: the file path of the file to read
         :param world_landmarks: whether to return world landmarks (centered on the hand) or
         landmarks relative to the image borders.
-        :return: the list of landmarks detected by MediaPipe or an empty list if no landmarks were found
+        :return: (the list of landmarks detected by MediaPipe
+        or an empty list if no landmarks were found,
+        list of handedness labels (left/right))
         """
         try:
             if world_landmarks:
@@ -44,7 +45,7 @@ class BaseLoader(object):
             # print(str(e))
             if self.verbose:
                 print('\r' + str(self.pipeline), end='')
-            return np.array([])
+            return np.array([]), np.array([])
 
     def load_landmarks(self, file='landmarks.csv') -> pd.DataFrame:
         """
@@ -52,4 +53,5 @@ class BaseLoader(object):
         :param file: path, without loader root path
         :return: the dataframe
         """
+        # todo: return in separate arrays
         return pd.read_csv(self.path + file)
