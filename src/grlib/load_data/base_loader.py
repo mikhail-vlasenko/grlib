@@ -10,12 +10,10 @@ class BaseLoader(object):
     Retrieves landmarks from folder with images.
     """
 
-    def __init__(self, pipeline: Pipeline, path: str,
-                 use_handedness: bool = True, verbose: bool = True):
+    def __init__(self, pipeline: Pipeline, path: str, verbose: bool = True):
         """
         :param pipeline: the pipeline the loader should use to detect landmarks
         :param path: path to dataset's main folder
-        :param use_handedness: include info whether the hand is right or left
         :param verbose: whether to display the pipeline after each step
         """
         self.verbose = verbose
@@ -23,7 +21,6 @@ class BaseLoader(object):
         if path[-1] != '/':
             path = path + '/'
         self.path = path
-        self.use_handedness = use_handedness
 
     def create_landmarks_for_image(self, file_path, world_landmarks=True) -> (np.ndarray, np.ndarray):
         """

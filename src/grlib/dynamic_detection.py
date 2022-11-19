@@ -164,7 +164,7 @@ class DynamicDetector:
         return ""
 
     def extract_landmarks(
-            self, frame: np.ndarray, draw_hand_position=False
+            self, frame: np.ndarray, draw_hand_position: bool = False
     ) -> (np.ndarray, np.ndarray, np.ndarray):
         """
 

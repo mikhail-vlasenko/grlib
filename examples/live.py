@@ -56,7 +56,7 @@ if __name__ == '__main__':
             run_pipeline.optimize()
 
             if len(landmarks) != 0:
-                prediction = model.predict(np.expand_dims(landmarks, axis=0))
+                prediction = model.predict(np.expand_dims(landmarks[0:63], axis=0))
                 cv.putText(frame, f'Class: {prediction[0]}, {handedness[0]}', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
             else:
                 cv.putText(frame, 'No gesture detected', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
