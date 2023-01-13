@@ -2,8 +2,6 @@ from typing import List, Dict, Union
 
 import numpy as np
 
-from src.grlib.trajectory.general_direction_trajectory import GeneralDirectionTrajectory
-
 
 class TrajectoryClassifier:
     def __init__(self, verbose=False):
@@ -15,7 +13,6 @@ class TrajectoryClassifier:
             trajectories: Union[np.ndarray, List[np.ndarray]],
             gestures: Union[np.ndarray, List[str]],
     ):
-        # todo: make use of the GeneralDirectionTrajectory type?
         """
         Remembers correspondence between gestures classes and their trajectories
         :param trajectories: the trajectories for classification

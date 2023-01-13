@@ -3,6 +3,7 @@ from typing import List
 
 import numpy as np
 import pandas as pd
+from natsort import natsorted
 
 from ..feature_extraction.pipeline import Pipeline
 from ..load_data.base_loader import BaseLoader
@@ -77,7 +78,8 @@ class DynamicGestureLoader(BaseLoader):
             files: List[str] = [file for file in os.listdir(curr_path)]
 
             # sorting file names alphabetically will "group" them by prefix
-            files.sort()
+            # in this sort, 2 goes before 10
+            files = natsorted(files)
 
             i = 0
             # iter over dynamic gesture instances
@@ -104,6 +106,7 @@ class DynamicGestureLoader(BaseLoader):
                         handedness = captured_handedness
                     # append only if recognized
                     if len(image_landmarks) > 0:
+                        print(i, curr_path + files[i])
                         gesture_image_landmarks.append(np.array(image_landmarks))
                         gesture_world_landmarks.append(np.array(world_landmarks))
                     i += 1
@@ -125,7 +128,7 @@ class DynamicGestureLoader(BaseLoader):
                     hand_shape_encoding = np.concatenate((hand_shape_encoding, lm), axis=None)
 
                 landmarks_results.append(hand_shape_encoding)
-                trajectory_results.append(trajectory.to_np())
+                trajectory_results.append(trajectory.flatten())
                 handedness_results.append(handedness)
                 # append folder name as class label
                 class_labels.append(folder)
