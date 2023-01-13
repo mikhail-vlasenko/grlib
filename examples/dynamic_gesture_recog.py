@@ -24,12 +24,10 @@ if __name__ == '__main__':
     loader.create_landmarks()
 
     landmarks = loader.load_landmarks()
-    trajectories = loader.load_trajectories()
-    x_traj = trajectories.iloc[:, :-1]
-    y = np.array(trajectories['label'])
+    x_traj, y = loader.load_trajectories()
 
     trajectory_classifier = TrajectoryClassifier()
-    trajectory_classifier.fit(np.array(x_traj), y)
+    trajectory_classifier.fit(x_traj, y)
 
     start_shapes = loader.get_start_shape(landmarks, num_hands)
     start_detection_model = LogisticRegression()
@@ -54,6 +52,7 @@ if __name__ == '__main__':
         trajectory_classifier=trajectory_classifier,
         update_candidates_every=5,
         candidate_zero_precision=ZERO_PRECISION,
+        verbose=True,
     )
 
     camera = cv.VideoCapture(0)

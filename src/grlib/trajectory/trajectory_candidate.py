@@ -50,12 +50,13 @@ class TrajectoryCandidate:
                 elif upper_boundary < position[i]:
                     direction = Direction.UP.value
 
-                if direction != self.target[i]:
+                if direction != self.target[0][i]:
                     return False
 
-        if len(self.target) == 3:
+        if len(self.target) == 1:
             self.valid = True
-        self.target = self.target[3:]
+        # remove one set of directions
+        self.target = self.target[1:]
         self.position = np.copy(position)
         return True
 
