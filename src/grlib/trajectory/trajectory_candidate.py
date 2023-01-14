@@ -8,7 +8,13 @@ class TrajectoryCandidate:
     Tracks a path of the hand for a specific dynamic gesture.
     If the path taken corresponds to the `target` path, the dynamic gesture is considered `valid`.
     """
-    def __init__(self, target: np.ndarray, prediction_class, init_pos, zero_precision, start_timestamp: float):
+    def __init__(self,
+                 target: np.ndarray,
+                 prediction_class,
+                 init_pos,
+                 zero_precision,
+                 start_timestamp: float,
+                 used_axi: dict = None):
         """
 
         :param target: what the trajectory should look like
@@ -17,6 +23,7 @@ class TrajectoryCandidate:
         :param zero_precision: how much is considered enough movement
             (should correspond to GeneralDirectionBuilder.zero_precision)
         :param start_timestamp: helps to determine when the candidate is too old
+        :param used_axi: which axi are taken into account for the trajectory. Defaults to x and y.
         """
         self.target = target
         self.pred_class = prediction_class
@@ -24,7 +31,10 @@ class TrajectoryCandidate:
         self.zero_precision = zero_precision
         self.timestamp = start_timestamp
 
-        self.used_axi = {"x": True, "y": True, "z": False}
+        if used_axi is None:
+            self.used_axi = {"x": True, "y": True, "z": False}
+        else:
+            self.used_axi = used_axi
 
         self.valid = False
         # todo: allow more movement along the same axis? (in 2 consecutive calls of update),

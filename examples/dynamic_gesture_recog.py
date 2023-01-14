@@ -77,7 +77,8 @@ if __name__ == '__main__':
             landmarks_reduced, handedness_reduced = fp_filter.drop_wrong_hands(landmarks, handedness)
             if len(landmarks_reduced) != 0:
                 # todo: fix hand_position to match reduced on index
-                possible, prediction = detector.analyze_frame(landmarks_reduced[:63 * num_hands], hand_position)
+                prediction, possible = detector.analyze_frame(
+                    landmarks_reduced[:63 * num_hands], hand_position)
                 if prediction != "":
                     predicted_gesture = prediction
                     last_pred = frame_cnt
@@ -86,7 +87,7 @@ if __name__ == '__main__':
                 cv.putText(frame, f'Prediction: {predicted_gesture}',
                            (10, 500), font, 1, (0, 255, 0), 2, cv.LINE_AA)
             else:
-                detector.analyze_frame(landmarks[:63*num_hands], hand_position)
+                detector.analyze_frame(landmarks[:63*num_hands], hand_position, idle_frame=True)
                 raise NoHandDetectedException
 
             cv.imshow('Frame', frame)
