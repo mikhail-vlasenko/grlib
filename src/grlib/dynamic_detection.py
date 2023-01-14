@@ -27,6 +27,7 @@ class DynamicDetector:
             trajectory_classifier: TrajectoryClassifier,
             update_candidates_every=10,
             candidate_zero_precision=0.1,
+            candidate_scale_zero_precision=True,
             candidate_old_multiplier=5,
             verbose=False,
     ):
@@ -44,6 +45,7 @@ class DynamicDetector:
             or the number of key frames is increased.
         :param candidate_zero_precision: displacement more than this (in image-relative coords)
             is considered movement for a candidate.
+        :param candidate_scale_zero_precision: if True, the zero precision is scaled.
         :param candidate_old_multiplier: after this multiplied by update_candidates_every,
             the candidate is considered outdated and is dropped.
         :param verbose: whether to print debug info.
@@ -59,6 +61,7 @@ class DynamicDetector:
         self.frame_cnt = 0
         self.update_candidates_every = update_candidates_every
         self.candidate_zero_precision = candidate_zero_precision
+        self.candidate_scale_zero_precision = candidate_scale_zero_precision
         self.candidate_old_multiplier = candidate_old_multiplier
         self.last_time_pred = 0
 
@@ -136,15 +139,15 @@ class DynamicDetector:
             if prediction[i] >= self.start_pos_confidence:
                 possible_classes.append(self.start_detection_model.classes_[i])
 
-        for p in possible_classes:
-            target_trajectories = self.trajectory_classifier.get_trajectories(p)
+        for possible_gesture_class in possible_classes:
+            target_trajectories = self.trajectory_classifier.get_trajectories(possible_gesture_class)
 
             # do not add if already exists a recent record
             exists_recent = False
             for candidate, _ in self.current_candidates:
                 # trajectories don't have to be compared, as they were not updated yet
-                if candidate.pred_class == p and candidate.timestamp > self.frame_cnt - (
-                        self.update_candidates_every / 2):
+                if candidate.pred_class == possible_gesture_class and \
+                        candidate.timestamp > self.frame_cnt - (self.update_candidates_every / 2):
                     exists_recent = True
                     break
 
@@ -153,8 +156,11 @@ class DynamicDetector:
                 for target in target_trajectories:
                     self.current_candidates.append((
                         TrajectoryCandidate(
-                            target, p, hand_position,
+                            target,
+                            possible_gesture_class,
+                            hand_position,
                             zero_precision=self.candidate_zero_precision,
+                            use_scaled_zero_precision=self.candidate_scale_zero_precision,
                             start_timestamp=self.frame_cnt),
                         self.frame_cnt + self.update_candidates_every
                     ))

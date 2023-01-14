@@ -24,12 +24,16 @@ class GeneralDirectionBuilder:
     Composes a trajectory as a sequence of Direction enum(1/0/-1) on multiple axi.
     Inspired by https://ieeexplore-ieee-org.tudelft.idm.oclc.org/stamp/stamp.jsp?tp=&arnumber=485888
     """
-    def __init__(self, zero_precision: float = 0.1):
+    def __init__(self, zero_precision: float = 0.1, use_scaled_zero_precision: bool = True):
         """
 
         :param zero_precision: how much is considered "no movement on the axis"
+        :param use_scaled_zero_precision: if True, the zero precision is scaled by the
+        maximal displacement over an axis, but remains at least equal to self.zero_precision.
+        This mitigates the problem of the zero precision being too small for fast movements.
         """
         self.zero_precision = zero_precision
+        self.use_scaled_zero_precision = use_scaled_zero_precision
 
     def make_trajectory(
             self,
@@ -46,20 +50,41 @@ class GeneralDirectionBuilder:
         trajectory = []
         last = MediaPipe.hands_spacial_position(landmark_sequence[0])[hand_num]
         for landmark in landmark_sequence[1:]:
-            directions = []
             current = MediaPipe.hands_spacial_position(landmark)[hand_num]
-            for i in range(DIMENSIONS):
-                lower_boundary = last[i] - self.zero_precision
-                upper_boundary = last[i] + self.zero_precision
-                if lower_boundary > current[i]:
-                    directions.append(Direction.DOWN.value)
-                elif upper_boundary < current[i]:
-                    directions.append(Direction.UP.value)
-                else:
-                    directions.append(Direction.STATIONARY.value)
+            directions = self.make_step_directions(last, current, self.zero_precision,
+                                                   self.use_scaled_zero_precision)
             trajectory.append(directions)
             last = current
         return np.array(trajectory)
+
+    @staticmethod
+    def make_step_directions(previous: np.ndarray, current: np.ndarray,
+                             zero_precision: float, use_scaled_zero_precision: bool) -> np.ndarray:
+        """
+        Creates the directions for a single step
+        :param previous: the previous position
+        :param current: the current position
+        :param zero_precision: how much is considered "no movement on the axis"
+        :param use_scaled_zero_precision: if True, the zero precision is scaled.
+        :return: the directions for the step
+        """
+        directions = []
+        if use_scaled_zero_precision:
+            # increase zero precision if the hand moved a lot
+            max_displacement = np.max(np.abs(current - previous))
+            if max_displacement > zero_precision * 2:
+                zero_precision = max_displacement / 2
+
+        for i in range(DIMENSIONS):
+            lower_boundary = previous[i] - zero_precision
+            upper_boundary = previous[i] + zero_precision
+            if lower_boundary > current[i]:
+                directions.append(Direction.DOWN.value)
+            elif upper_boundary < current[i]:
+                directions.append(Direction.UP.value)
+            else:
+                directions.append(Direction.STATIONARY.value)
+        return np.array(directions)
 
     @staticmethod
     def filter_repeated(trajectory: np.ndarray) -> np.ndarray:

@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.grlib.trajectory.general_direction_builder import Direction
+from src.grlib.trajectory.general_direction_builder import Direction, GeneralDirectionBuilder
 
 
 class TrajectoryCandidate:
@@ -12,16 +12,19 @@ class TrajectoryCandidate:
                  target: np.ndarray,
                  prediction_class,
                  init_pos,
-                 zero_precision,
+                 zero_precision: float,
+                 use_scaled_zero_precision: bool,
                  start_timestamp: float,
                  used_axi: dict = None):
         """
 
         :param target: what the trajectory should look like
         :param prediction_class: corresponding class
-        :param init_pos:
+        :param init_pos: initial position of the hand
         :param zero_precision: how much is considered enough movement
             (should correspond to GeneralDirectionBuilder.zero_precision)
+        :param use_scaled_zero_precision: if True, the zero precision is scaled
+        like in the GeneralDirectionBuilder.
         :param start_timestamp: helps to determine when the candidate is too old
         :param used_axi: which axi are taken into account for the trajectory. Defaults to x and y.
         """
@@ -29,6 +32,7 @@ class TrajectoryCandidate:
         self.pred_class = prediction_class
         self.position = init_pos
         self.zero_precision = zero_precision
+        self.use_scaled_zero_precision = use_scaled_zero_precision
         self.timestamp = start_timestamp
 
         if used_axi is None:
@@ -49,18 +53,13 @@ class TrajectoryCandidate:
         :param position: new hand position
         :return: if the trajectory may still be valid (but not necessarily IS valid)
         """
+        directions = GeneralDirectionBuilder.make_step_directions(
+            self.position, position, self.zero_precision, self.use_scaled_zero_precision)
+
         for i, a in enumerate(["x", "y", "z"]):
             # only update if the axis is used
             if self.used_axi[a]:
-                lower_boundary = self.position[i] - self.zero_precision
-                upper_boundary = self.position[i] + self.zero_precision
-                direction = Direction.STATIONARY.value
-                if lower_boundary > position[i]:
-                    direction = Direction.DOWN.value
-                elif upper_boundary < position[i]:
-                    direction = Direction.UP.value
-
-                if direction != self.target[0][i]:
+                if directions[i] != self.target[0][i]:
                     return False
 
         if len(self.target) == 1:
