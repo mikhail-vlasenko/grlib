@@ -16,6 +16,7 @@ class DynamicDetector:
     """
     Runs the dynamic gesture recognition process.
     """
+
     def __init__(
             self,
             start_detection_model,
@@ -57,14 +58,13 @@ class DynamicDetector:
         self.update_candidates_every = update_candidates_every
         self.candidate_zero_precision = candidate_zero_precision
         self.candidate_old_multiplier = candidate_old_multiplier
-        self.last_pred = ""
         self.last_time_pred = 0
 
         self.verbose = verbose
 
     def analyze_frame(
             self, landmarks: np.ndarray, hand_position: np.ndarray, idle_frame=False
-    ) -> List[str]:
+    ) -> (List[str], str):
         """
         Runs the frame through the dynamic gesture recognition process.
         After execution, `self.last_pred` contains the most recently predicted class.
@@ -75,26 +75,24 @@ class DynamicDetector:
             for idle frames, it might make sense to pass last recorded position.
         :param idle_frame: if True, the landmarks and hands are not taken into account.
             however, the inner counter records a time step
-        :return: list of potential classes on this frame.
+        :return: list of potential classes on this frame, prediction for this frame ("" for none).
         :raise: NoHandDetectedException
         """
         self.frame_cnt += 1
-        if self.last_time_pred < self.frame_cnt - 30:
-            self.last_pred = ""
 
         possible_classes = []
         if not idle_frame:
             possible_classes = self.add_candidates(landmarks, hand_position)
 
+        pred = ""
         if self.frame_cnt % self.update_candidates_every == 0:
             pred = self.update_candidates(hand_position)
             if pred != "":
-                self.last_pred = pred
                 self.last_time_pred = self.frame_cnt
                 if self.verbose:
                     print(f'Prediction: {pred}')
 
-        return possible_classes
+        return possible_classes, pred
 
     def add_candidates(self, landmarks, hand_position) -> List[str]:
         """
@@ -113,21 +111,24 @@ class DynamicDetector:
                 possible_classes.append(self.start_detection_model.classes_[i])
 
         for p in possible_classes:
-            target_traj = self.trajectory_classifier.avg_trajectories[p]
+            target_trajectories = self.trajectory_classifier.get_trajectories(p)
 
             # do not add if already exists a recent record
             exists_recent = False
             for candidate in self.current_candidates:
+                # trajectories don't have to be compared, as they were not updated yet
                 if candidate.pred_class == p and candidate.timestamp > self.frame_cnt - (
                         self.update_candidates_every / 2):
                     exists_recent = True
                     break
 
             if not exists_recent:
-                self.current_candidates.append(TrajectoryCandidate(
-                    target_traj, p, hand_position,
-                    zero_precision=self.candidate_zero_precision, start_timestamp=self.frame_cnt
-                ))
+                # add a new candidate for every representative trajectory
+                for target in target_trajectories:
+                    self.current_candidates.append(TrajectoryCandidate(
+                        target, p, hand_position,
+                        zero_precision=self.candidate_zero_precision, start_timestamp=self.frame_cnt
+                    ))
 
         return possible_classes
 
@@ -146,7 +147,7 @@ class DynamicDetector:
                                    self.update_candidates_every * self.candidate_old_multiplier
         while i < len(self.current_candidates):
             candidate = self.current_candidates[i]
-            # otherwise too early to make a decision
+            # otherwise, too early to make a decision
             if candidate.timestamp <= self.frame_cnt - self.update_candidates_every:
                 if self.verbose:
                     print(str(candidate))

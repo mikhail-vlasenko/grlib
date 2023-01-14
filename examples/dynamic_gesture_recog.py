@@ -5,6 +5,7 @@ from src.grlib.exceptions import NoHandDetectedException
 from src.grlib.feature_extraction.pipeline import Pipeline
 from src.grlib.filter.false_positive_filter import FalsePositiveFilter
 from src.grlib.load_data.dynamic_gesture_loader import DynamicGestureLoader
+from src.grlib.trajectory.general_direction_builder import GeneralDirectionBuilder
 import cv2.cv2 as cv
 import numpy as np
 
@@ -25,6 +26,8 @@ if __name__ == '__main__':
 
     landmarks = loader.load_landmarks()
     x_traj, y = loader.load_trajectories()
+    x_traj = list(map(GeneralDirectionBuilder.filter_stationary, x_traj))
+    x_traj = list(map(GeneralDirectionBuilder.filter_repeated, x_traj))
 
     trajectory_classifier = TrajectoryClassifier()
     trajectory_classifier.fit(x_traj, y)
@@ -58,21 +61,29 @@ if __name__ == '__main__':
     camera = cv.VideoCapture(0)
     font = cv.FONT_HERSHEY_SIMPLEX
     frame_cnt = 0
+    last_pred = 0
+    predicted_gesture = ""
     while True:
         ret, frame = camera.read()
         if not ret:
             continue
         if cv.waitKey(1) & 0xFF == ord('q'):
             break
+        frame_cnt += 1
         try:
+            if last_pred < frame_cnt - 5:
+                predicted_gesture = ""
             landmarks, handedness, hand_position = detector.extract_landmarks(frame)
             landmarks_reduced, handedness_reduced = fp_filter.drop_wrong_hands(landmarks, handedness)
             if len(landmarks_reduced) != 0:
                 # todo: fix hand_position to match reduced on index
-                possible = detector.analyze_frame(landmarks_reduced[:63*num_hands], hand_position)
+                possible, prediction = detector.analyze_frame(landmarks_reduced[:63 * num_hands], hand_position)
+                if prediction != "":
+                    predicted_gesture = prediction
+                    last_pred = frame_cnt
                 cv.putText(frame, f'Possible: {possible}',
                            (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
-                cv.putText(frame, f'Prediction: {detector.last_pred}',
+                cv.putText(frame, f'Prediction: {predicted_gesture}',
                            (10, 500), font, 1, (0, 255, 0), 2, cv.LINE_AA)
             else:
                 detector.analyze_frame(landmarks[:63*num_hands], hand_position)
@@ -81,7 +92,7 @@ if __name__ == '__main__':
             cv.imshow('Frame', frame)
         except NoHandDetectedException as e:
             cv.putText(frame, 'No hand detected', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
-            cv.putText(frame, f'Prediction: {detector.last_pred}', (10, 500), font, 1, (0, 255, 0), 2, cv.LINE_AA)
+            cv.putText(frame, f'Prediction: {predicted_gesture}', (10, 500), font, 1, (0, 255, 0), 2, cv.LINE_AA)
 
             cv.imshow('Frame', frame)
 

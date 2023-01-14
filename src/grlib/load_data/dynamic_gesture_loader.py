@@ -119,9 +119,7 @@ class DynamicGestureLoader(BaseLoader):
                     key_world_landmarks.append(gesture_world_landmarks[k])
 
                 # trajectory needs image-relative landmarks
-                trajectory = self.trajectory_builder.filter_stationary(
-                                 self.trajectory_builder.filter_repeated(
-                                     self.trajectory_builder.make_trajectory(key_image_landmarks)))
+                trajectory = self.trajectory_builder.make_trajectory(key_image_landmarks)
 
                 # hand shape needs hand-centered
                 hand_shape_encoding = np.array([], dtype=float)
