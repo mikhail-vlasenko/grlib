@@ -66,7 +66,7 @@ def extract_key_frames(landmark_sequence: List[np.ndarray], target_len: int) -> 
 
     if len(key_frames) < target_len:
         # include the last frame if it wasn't
-        key_frames.append(len(key_frames) - 1)
+        key_frames.append(len(landmark_sequence) - 1)
 
     return key_frames
 

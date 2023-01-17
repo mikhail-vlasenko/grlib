@@ -3,6 +3,7 @@ from typing import List
 
 import numpy as np
 import pandas as pd
+from natsort import natsorted
 
 from ..feature_extraction.pipeline import Pipeline
 from ..load_data.base_loader import BaseLoader
@@ -77,7 +78,8 @@ class DynamicGestureLoader(BaseLoader):
             files: List[str] = [file for file in os.listdir(curr_path)]
 
             # sorting file names alphabetically will "group" them by prefix
-            files.sort()
+            # in this sort, 2 goes before 10
+            files = natsorted(files)
 
             i = 0
             # iter over dynamic gesture instances
@@ -116,7 +118,7 @@ class DynamicGestureLoader(BaseLoader):
                     key_image_landmarks.append(gesture_image_landmarks[k])
                     key_world_landmarks.append(gesture_world_landmarks[k])
 
-                # trajectory needs image-relative
+                # trajectory needs image-relative landmarks
                 trajectory = self.trajectory_builder.make_trajectory(key_image_landmarks)
 
                 # hand shape needs hand-centered
@@ -125,7 +127,7 @@ class DynamicGestureLoader(BaseLoader):
                     hand_shape_encoding = np.concatenate((hand_shape_encoding, lm), axis=None)
 
                 landmarks_results.append(hand_shape_encoding)
-                trajectory_results.append(trajectory.to_np())
+                trajectory_results.append(trajectory.flatten())
                 handedness_results.append(handedness)
                 # append folder name as class label
                 class_labels.append(folder)
@@ -147,16 +149,22 @@ class DynamicGestureLoader(BaseLoader):
         hand_shape_df.to_csv(self.path + output_file, index=False)
         trajectory_df.to_csv(self.path + self.output_trajectory_name, index=False)
 
-    def load_trajectories(self, file=None) -> pd.DataFrame:
+    def load_trajectories(self, file: str = None) -> (List[np.ndarray], np.ndarray):
         """
         Read trajectories from csv file.
         :param file: path to trajectories file, without loader root path.
         Defaults to self.output_trajectory_name.
-        :return: the dataframe
+        :return: list of trajectories as they can have different lengths and array of labels.
+        Each trajectory is a 2d numpy array
         """
         if file is None:
             file = self.output_trajectory_name
-        return pd.read_csv(self.path + file)
+        df = pd.read_csv(self.path + file)
+        trajectories = []
+        data = df.iloc[:, :-1].values
+        for t in data:
+            trajectories.append(GeneralDirectionBuilder.from_flat(t))
+        return trajectories, np.array(df['label'])
 
     @staticmethod
     def get_start_shape(hand_shape_df: pd.DataFrame, num_hands: int):
