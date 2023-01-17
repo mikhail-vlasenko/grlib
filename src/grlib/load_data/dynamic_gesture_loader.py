@@ -149,7 +149,7 @@ class DynamicGestureLoader(BaseLoader):
         hand_shape_df.to_csv(self.path + output_file, index=False)
         trajectory_df.to_csv(self.path + self.output_trajectory_name, index=False)
 
-    def load_trajectories(self, file=None) -> (List[np.ndarray], np.ndarray):
+    def load_trajectories(self, file: str = None) -> (List[np.ndarray], np.ndarray):
         """
         Read trajectories from csv file.
         :param file: path to trajectories file, without loader root path.

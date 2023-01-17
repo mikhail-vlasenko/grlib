@@ -25,10 +25,10 @@ class DynamicDetector:
             pipeline: Pipeline,
             start_pos_confidence: float,
             trajectory_classifier: TrajectoryClassifier,
-            update_candidates_every=10,
-            candidate_zero_precision=0.1,
-            candidate_scale_zero_precision=True,
-            candidate_old_multiplier=5,
+            update_candidates_every: int = 10,
+            candidate_zero_precision: float = 0.1,
+            candidate_scale_zero_precision: bool = True,
+            candidate_old_multiplier: float = 5,
             verbose=False,
     ):
         """
@@ -80,7 +80,7 @@ class DynamicDetector:
             for idle frames, it might make sense to pass last recorded position.
         :param idle_frame: if True, the landmarks and hands are not taken into account.
             however, the inner counter records a time step and the candidates are updated.
-        :return: prediction for this frame ("" for none),
+        :return: prediction for this frame (or None),
         list of gestures that can start on this frame.
         :raise: NoHandDetectedException
         """
@@ -90,7 +90,7 @@ class DynamicDetector:
         if not idle_frame:
             possible_classes = self.add_candidates(landmarks, hand_position)
 
-        pred = ""
+        pred = None
         oldest_allowed_timestamp = self.frame_cnt - \
                                    self.update_candidates_every * self.candidate_old_multiplier
         # check which candidates are ready to be updated and update them.

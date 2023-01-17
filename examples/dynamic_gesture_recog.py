@@ -79,7 +79,7 @@ if __name__ == '__main__':
                 # todo: fix hand_position to match reduced on index
                 prediction, possible = detector.analyze_frame(
                     landmarks_reduced[:63 * num_hands], hand_position)
-                if prediction != "":
+                if prediction is not None:
                     predicted_gesture = prediction
                     last_pred = frame_cnt
                 cv.putText(frame, f'Possible: {possible}',
