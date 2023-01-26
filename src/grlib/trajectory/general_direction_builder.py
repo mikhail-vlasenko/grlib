@@ -68,6 +68,9 @@ class GeneralDirectionBuilder:
         :param use_scaled_zero_precision: if True, the zero precision is scaled.
         :return: the directions for the step
         """
+        if previous.shape != (DIMENSIONS,) or current.shape != (DIMENSIONS,):
+            raise ValueError(f"Expected 3D vectors, got {previous.shape} and {current.shape}")
+
         directions = []
         if use_scaled_zero_precision:
             # increase zero precision if the hand moved a lot

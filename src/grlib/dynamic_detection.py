@@ -1,14 +1,8 @@
-from typing import List, Union
+from typing import List
 
-import cv2.cv2 as cv
 import numpy as np
-import pandas as pd
-import sklearn.base
-from sklearn.linear_model import LogisticRegression
 from collections import deque
 
-from src.grlib.feature_extraction.mediapipe_landmarks import MediaPipe
-from src.grlib.feature_extraction.pipeline import Pipeline
 from src.grlib.trajectory.trajectory_candidate import TrajectoryCandidate
 from src.grlib.trajectory.trajectory_classifier import TrajectoryClassifier
 
@@ -21,8 +15,6 @@ class DynamicDetector:
     def __init__(
             self,
             start_detection_model,
-            y: np.ndarray,
-            pipeline: Pipeline,
             start_pos_confidence: float,
             trajectory_classifier: TrajectoryClassifier,
             update_candidates_every: int = 10,
@@ -33,8 +25,6 @@ class DynamicDetector:
     ):
         """
         :param start_detection_model: model to predict probabilities of the start shapes.
-        :param y: classes for these landmarks.
-        :param pipeline: recognition pipeline.
         :param start_pos_confidence: how much certainty on the start shape detection model
         is enough to include class for trajectory analysis.
         Too high - no predictions.
@@ -51,8 +41,6 @@ class DynamicDetector:
         :param verbose: whether to print debug info.
         """
         self.start_detection_model = start_detection_model
-        self.sorted_labels = sorted(y.tolist())
-        self.pipeline: Pipeline = pipeline
         self.start_pos_confidence = start_pos_confidence
         self.trajectory_classifier: TrajectoryClassifier = trajectory_classifier
 
@@ -67,28 +55,15 @@ class DynamicDetector:
 
         self.verbose = verbose
 
-    def analyze_frame(
-            self, landmarks: np.ndarray, hand_position: np.ndarray, idle_frame=False
+    def update_candidates(
+            self, hand_position: np.ndarray
     ) -> (List[str], str):
         """
-        Runs the frame through the dynamic gesture recognition process.
-        After execution, `self.last_pred` contains the most recently predicted class.
-        `self.last_pred = ''` means no class is predicted.
-
-        :param landmarks: shape of the hand. Indifferent to its position within the frame.
+        Updates the candidates and returns the prediction if there is one.
         :param hand_position: position of the hand within frame.
-            for idle frames, it might make sense to pass last recorded position.
-        :param idle_frame: if True, the landmarks and hands are not taken into account.
-            however, the inner counter records a time step and the candidates are updated.
-        :return: prediction for this frame (or None),
-        list of gestures that can start on this frame.
-        :raise: NoHandDetectedException
+        :return: prediction for this frame (or None)
         """
         self.frame_cnt += 1
-
-        possible_classes = []
-        if not idle_frame:
-            possible_classes = self.add_candidates(landmarks, hand_position)
 
         pred = None
         oldest_allowed_timestamp = self.frame_cnt - \
@@ -121,12 +96,12 @@ class DynamicDetector:
             else:
                 break
 
-        return pred, possible_classes
+        return pred
 
     def add_candidates(self, landmarks, hand_position) -> List[str]:
         """
         Appends the new candidates to existing ones.
-        :param landmarks: hand landmarks (shape).
+        :param landmarks: shape of the hand. Indifferent to its position within the frame.
         :param hand_position: hand position on the frame.
         :return: list of potential classes on this frame.
         """
@@ -142,7 +117,7 @@ class DynamicDetector:
         for possible_gesture_class in possible_classes:
             target_trajectories = self.trajectory_classifier.get_trajectories(possible_gesture_class)
 
-            # do not add if already exists a recent record
+            # do not add if already exists a recent candidate for the same gesture class
             exists_recent = False
             for candidate, _ in self.current_candidates:
                 # trajectories don't have to be compared, as they were not updated yet
@@ -166,35 +141,3 @@ class DynamicDetector:
                     ))
 
         return possible_classes
-
-    def extract_landmarks(
-            self, frame: np.ndarray, draw_hand_position: bool = False
-    ) -> (np.ndarray, np.ndarray, np.ndarray):
-        """
-
-        :param frame: the image. A circle to indicate the recognized hand position gets added.
-        :param draw_hand_position: If True, puts a circle on the frame at the detected location
-            of the hand.
-        :return:
-        """
-        # this can raise NoHandDetectedException
-        landmarks, handedness = self.pipeline.get_world_landmarks_from_image(frame)
-        self.pipeline.optimize()
-
-        # WARNING: this is for a single hand
-        hand_position = MediaPipe.hands_spacial_position(
-            # take [0] because we only need landmarks, not handedness
-            self.pipeline.get_landmarks_from_image(frame)[0]
-        )[0]
-
-        if draw_hand_position:
-            # draw the position of the hand, inplace
-            cv.circle(
-                frame,
-                (round((1 - hand_position[0]) * frame.shape[1]),
-                 round(hand_position[1] * frame.shape[0])),
-                10,
-                (0, 0, 255),
-                thickness=3,
-            )
-        return landmarks, handedness, hand_position

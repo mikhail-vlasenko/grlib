@@ -1,5 +1,6 @@
 import numpy as np
 
+from src.grlib.exceptions import UpdateOnFinishedCandidateException
 from src.grlib.trajectory.general_direction_builder import Direction, GeneralDirectionBuilder
 
 
@@ -40,6 +41,7 @@ class TrajectoryCandidate:
         else:
             self.used_axi = used_axi
 
+        # if the trajectory is complete
         self.valid = False
         # todo: allow more movement along the same axis? (in 2 consecutive calls of update),
         #   (only if its correct direction)
@@ -53,6 +55,9 @@ class TrajectoryCandidate:
         :param position: new hand position
         :return: if the trajectory may still be valid (but not necessarily IS valid)
         """
+        if self.valid:
+            raise UpdateOnFinishedCandidateException("Candidate is already valid")
+
         directions = GeneralDirectionBuilder.make_step_directions(
             self.position, position, self.zero_precision, self.use_scaled_zero_precision)
 

@@ -2,6 +2,7 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
 from src.grlib.exceptions import NoHandDetectedException
+from src.grlib.feature_extraction.mediapipe_landmarks import MediaPipe
 from src.grlib.feature_extraction.pipeline import Pipeline
 from src.grlib.filter.false_positive_filter import FalsePositiveFilter
 from src.grlib.load_data.dynamic_gesture_loader import DynamicGestureLoader
@@ -41,7 +42,9 @@ if __name__ == '__main__':
         name = f'handedness {i}'
         fp_data[name] = landmarks[name]
     fp_data['label'] = y
-    fp_filter = FalsePositiveFilter(fp_data, 'cosine', confidence=0.7)
+    # start detection model will decide which hand shapes are close enough to be make candidates,
+    # so we only want to filter out by handedness, thus the confidence is set to -1
+    fp_filter = FalsePositiveFilter(fp_data, 'cosine', confidence=-1)
 
     # when running the camera, more hands may be in the frame, so we want to detect all of them
     run_pipeline = Pipeline(4)
@@ -49,8 +52,6 @@ if __name__ == '__main__':
 
     detector = DynamicDetector(
         start_detection_model,
-        y,
-        run_pipeline,
         start_pos_confidence=0.1,
         trajectory_classifier=trajectory_classifier,
         update_candidates_every=5,
@@ -69,32 +70,44 @@ if __name__ == '__main__':
             continue
         if cv.waitKey(1) & 0xFF == ord('q'):
             break
+
         frame_cnt += 1
         try:
             if last_pred < frame_cnt - 5:
                 predicted_gesture = ""
-            landmarks, handedness, hand_position = detector.extract_landmarks(frame)
+
+            # Extract hand information
+            landmarks, handedness = pipeline.get_world_landmarks_from_image(frame)
+            relative_landmarks, _ = pipeline.get_landmarks_from_image(frame)
+            hand_position = MediaPipe.hands_spacial_position(relative_landmarks)
+
+            # optimize the pipeline to improve subsequent calls
+            pipeline.optimize()
+
             landmarks_reduced, handedness_reduced = fp_filter.drop_wrong_hands(landmarks, handedness)
+            # todo: fix hand_position to match _reduced on index
+            hand_position = hand_position[0]
             if len(landmarks_reduced) != 0:
-                # todo: fix hand_position to match reduced on index
-                prediction, possible = detector.analyze_frame(
-                    landmarks_reduced[:63 * num_hands], hand_position)
+                # add new trajectory candidates
+                possible = detector.add_candidates(landmarks, hand_position)
+                # update candidates
+                prediction = detector.update_candidates(hand_position)
+
                 if prediction is not None:
                     predicted_gesture = prediction
                     last_pred = frame_cnt
+
                 cv.putText(frame, f'Possible: {possible}',
                            (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
-                cv.putText(frame, f'Prediction: {predicted_gesture}',
-                           (10, 500), font, 1, (0, 255, 0), 2, cv.LINE_AA)
             else:
-                detector.analyze_frame(landmarks[:63*num_hands], hand_position, idle_frame=True)
-                raise NoHandDetectedException
-
-            cv.imshow('Frame', frame)
+                # update candidates even if no valid hand shape is detected
+                detector.update_candidates(hand_position)
+                cv.putText(frame, 'Detected hands were filtered out', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
         except NoHandDetectedException as e:
+            # todo: clear candidates if no hand is detected for a while?
             cv.putText(frame, 'No hand detected', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
-            cv.putText(frame, f'Prediction: {predicted_gesture}', (10, 500), font, 1, (0, 255, 0), 2, cv.LINE_AA)
 
-            cv.imshow('Frame', frame)
+        cv.putText(frame, f'Prediction: {predicted_gesture}', (10, 500), font, 1, (0, 255, 0), 2, cv.LINE_AA)
+        cv.imshow('Frame', frame)
 
         # print('\r' + str(pipeline), end='')
