@@ -78,11 +78,11 @@ class MediaPipe:
         """
         Returns a list of zeros or ones from the given processed list of hands.
         Where 0 is Left hand, 1 is Right hand.
-        2 is placed to fill the array up to num_hands if there are not enough hands detected.
+        -1 is placed to fill the array up to num_hands if there are not enough hands detected.
         :param detected_hands: the hands as detected by mediapipe
         :return: a list of integers from detected_hands
         """
-        handedness = np.full(self.num_hands, 2)
+        handedness = np.full(self.num_hands, -1)
 
         for i in range(len(detected_hands)):
             if detected_hands[i].classification[0].label == 'Left':

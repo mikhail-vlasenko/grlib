@@ -70,7 +70,10 @@ class Pipeline(object):
         :param image: the image to run the pipeline on
         :param callback: the method that should be run for each stage.
         For example run_stage_landmarks or run_stage_world_landmarks
-        :return (landmarks of the detected hands, left/right of the detected hands called)
+        :return (landmarks of the detected hands, left/right of the detected hands)
+        lengths of the returned arrays are 21 * 3 * self.num_hands and self.num_hands respectively
+        landmark array is filled with zeros if less hands are detected
+        handedness array is filled with -1
         :raise: NoHandDetectedException
         """
         # Reset last_detected_hands for every stage

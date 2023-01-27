@@ -77,25 +77,33 @@ if __name__ == '__main__':
                 predicted_gesture = ""
 
             # Extract hand information
-            landmarks, handedness = pipeline.get_world_landmarks_from_image(frame)
-            relative_landmarks, _ = pipeline.get_landmarks_from_image(frame)
+            landmarks, handedness = run_pipeline.get_world_landmarks_from_image(frame)
+            relative_landmarks, _ = run_pipeline.get_landmarks_from_image(frame)
             hand_position = MediaPipe.hands_spacial_position(relative_landmarks)
 
             # optimize the pipeline to improve subsequent calls
-            pipeline.optimize()
+            run_pipeline.optimize()
 
             landmarks_reduced, handedness_reduced = fp_filter.drop_wrong_hands(landmarks, handedness)
             # todo: fix hand_position to match _reduced on index
             hand_position = hand_position[0]
             if len(landmarks_reduced) != 0:
                 # add new trajectory candidates
-                possible = detector.add_candidates(landmarks, hand_position)
-                # update candidates
-                prediction = detector.update_candidates(hand_position)
+                # cut off landmarks with [:63 * num_hands] because motion blur sometimes duplicates hands
+                possible = detector.add_candidates(landmarks_reduced[:63 * num_hands], hand_position)
+                # update candidates and get possible classes
+                classes = detector.update_candidates(hand_position)
+                if len(classes) != 0:
+                    prediction = classes[0]
+                    # prediction = detector.evaluate_end_shape(landmarks, classes)
+                else:
+                    prediction = None
 
                 if prediction is not None:
                     predicted_gesture = prediction
                     last_pred = frame_cnt
+                    # clean the current candidates because the gesture is found
+                    detector.clear_candidates()
 
                 cv.putText(frame, f'Possible: {possible}',
                            (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
