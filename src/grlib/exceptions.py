@@ -3,3 +3,6 @@ class NoHandDetectedException(Exception):
 
 class UpdateOnFinishedCandidateException(Exception):
     pass
+
+class HandsAreNotRepresentativeException(ValueError):
+    pass

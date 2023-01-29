@@ -92,22 +92,6 @@ class MediaPipe:
 
         return handedness
 
-    @staticmethod
-    def hands_spacial_position(landmarks: np.ndarray) -> np.ndarray:
-        """
-        Encodes the hands position in the picture.
-        Can be used to calculate the trajectory.
-        Warning: the coordinates of the given landmarks should not be centered on the hand itself.
-            Thus, "world_landmarks" are not acceptable.
-        :param landmarks: array of landmarks, like the result of get_landmarks_from_hands.
-        NOT world landmarks, as those are centered on the hand!
-        TODO: do we want to strictly differentiate between world and other landmarks?
-        TODO: make a warning if dynamic gesture appears stationary
-        :return: the encoding
-        """
-        reshaped = landmarks.reshape((-1, 21, 3))
-        return np.mean(reshaped, axis=1)
-
     def show_landmarks(self, img_path, results=None):
         """
         Creates debug files and pyplots of landmarks.
@@ -154,3 +138,30 @@ class MediaPipe:
 
     def close(self):
         self.hands.close()
+
+
+def hands_spacial_position(landmarks: np.ndarray) -> np.ndarray:
+    """
+    Encodes the hands position in the picture.
+    Can be used to calculate the trajectory.
+    Warning: the coordinates of the given landmarks should not be centered on the hand itself.
+        Thus, "world_landmarks" are not acceptable.
+    :param landmarks: array of landmarks, like the result of get_landmarks_from_hands.
+    NOT world landmarks, as those are centered on the hand!
+    TODO: do we want to strictly differentiate between world and other landmarks?
+    TODO: make a warning if dynamic gesture appears stationary
+    :return: the encoding
+    """
+    reshaped = landmarks.reshape((-1, 21, 3))
+    return np.mean(reshaped, axis=1)
+
+
+def get_landmarks_at_position(landmarks: np.ndarray, index: int) -> np.ndarray:
+    """
+    Returns the landmarks at the given position from a flat array of landmarks.
+    Assumes 21 3d landmarks per hand.
+    :param landmarks: flat array of landmarks, like the result of pipeline.get_landmarks_from_image
+    :param index: the index of the hand
+    :return: the landmarks for the given index
+    """
+    return landmarks[index * 21 * 3: (index + 1) * 21 * 3]

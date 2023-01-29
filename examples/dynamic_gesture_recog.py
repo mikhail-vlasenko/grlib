@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
 from src.grlib.exceptions import NoHandDetectedException
-from src.grlib.feature_extraction.mediapipe_landmarks import MediaPipe
+from src.grlib.feature_extraction.mediapipe_landmarks import *
 from src.grlib.feature_extraction.pipeline import Pipeline
 from src.grlib.filter.false_positive_filter import FalsePositiveFilter
 from src.grlib.load_data.dynamic_gesture_loader import DynamicGestureLoader
@@ -79,20 +79,22 @@ if __name__ == '__main__':
             # Extract hand information
             landmarks, handedness = run_pipeline.get_world_landmarks_from_image(frame)
             relative_landmarks, _ = run_pipeline.get_landmarks_from_image(frame)
-            hand_position = MediaPipe.hands_spacial_position(relative_landmarks)
+            hand_position = hands_spacial_position(relative_landmarks)
 
             # optimize the pipeline to improve subsequent calls
             run_pipeline.optimize()
 
-            landmarks_reduced, handedness_reduced = fp_filter.drop_wrong_hands(landmarks, handedness)
-            # todo: fix hand_position to match _reduced on index
-            hand_position = hand_position[0]
-            if len(landmarks_reduced) != 0:
+            # get index of the best hand
+            indices = fp_filter.best_hands_indices_silent(landmarks, handedness)
+            if len(indices) != 0:
+                index = indices[0]
+                # select the best hand
+                landmarks_best = get_landmarks_at_position(landmarks, index)
+                hand_position_best = hand_position[index]
                 # add new trajectory candidates
-                # cut off landmarks with [:63 * num_hands] because motion blur sometimes duplicates hands
-                possible = detector.add_candidates(landmarks_reduced[:63 * num_hands], hand_position)
+                possible = detector.add_candidates(landmarks_best, hand_position_best)
                 # update candidates and get possible classes
-                classes = detector.update_candidates(hand_position)
+                classes = detector.update_candidates(hand_position_best)
                 if len(classes) != 0:
                     prediction = classes[0]
                     # prediction = detector.evaluate_end_shape(landmarks, classes)
@@ -109,7 +111,10 @@ if __name__ == '__main__':
                            (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
             else:
                 # update candidates even if no valid hand shape is detected
-                detector.update_candidates(hand_position)
+                # use the first hand for position
+                # todo: can use semi-handtracking to get the correct hand
+                #  (just the closest position to the last known)
+                detector.update_candidates(hand_position[0])
                 cv.putText(frame, 'Detected hands were filtered out', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
         except NoHandDetectedException as e:
             # todo: clear candidates if no hand is detected for a while?
