@@ -80,26 +80,23 @@ class DynamicDetector:
         # check which candidates are ready to be updated and update them.
         # because the update frequency is constant,
         # the candidates in the queue are sorted by the update timestamp
-        while True:
-            if len(self.current_candidates) > 0 and self.current_candidates[0][1] <= self.frame_cnt:
-                candidate, _ = self.current_candidates.popleft()
-                if self.verbose:
-                    print(f"Updating {candidate}")
-                # a candidate may also be too old to be considered
-                if candidate.timestamp < oldest_allowed_timestamp:
-                    continue
-                # update the candidate and check if it has reached the end (is valid)
-                if candidate.update(hand_position):
-                    if candidate.valid:
-                        valid_classes.append(candidate.pred_class)
-                        if self.verbose:
-                            print(f"Complete trajectory for {valid_classes[-1]}")
-                    else:
-                        # add back to the queue if it is not valid yet, but can be in the future
-                        self.current_candidates.append(
-                            (candidate, self.frame_cnt + self.update_candidates_every))
-            else:
-                break
+        while len(self.current_candidates) > 0 and self.current_candidates[0][1] <= self.frame_cnt:
+            candidate, _ = self.current_candidates.popleft()
+            if self.verbose:
+                print(f"Updating {candidate}")
+            # a candidate may also be too old to be considered
+            if candidate.timestamp < oldest_allowed_timestamp:
+                continue
+            # update the candidate and check if it has reached the end (is valid)
+            if candidate.update(hand_position):
+                if candidate.valid:
+                    valid_classes.append(candidate.pred_class)
+                    if self.verbose:
+                        print(f"Complete trajectory for {valid_classes[-1]}")
+                else:
+                    # add back to the queue if it is not valid yet, but can be in the future
+                    self.current_candidates.append(
+                        (candidate, self.frame_cnt + self.update_candidates_every))
 
         return valid_classes
 

@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
 from src.grlib.exceptions import NoHandDetectedException
-from src.grlib.feature_extraction.mediapipe_landmarks import *
+from src.grlib.feature_extraction.mediapipe_landmarks import get_landmarks_at_position, hands_spacial_position
 from src.grlib.feature_extraction.pipeline import Pipeline
 from src.grlib.filter.false_positive_filter import FalsePositiveFilter
 from src.grlib.load_data.dynamic_gesture_loader import DynamicGestureLoader
