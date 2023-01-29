@@ -113,11 +113,14 @@ class DynamicDetector:
         if landmarks.shape != (21 * 3 * self.num_hands,):
             raise ValueError(f"Expected to get hand landmarks of shape "
                              f"{(21 * 3 * self.num_hands,)}, got {landmarks.shape}")
-        # proba because there is no need to be sure that it is a particular class:
-        #   if there is a good chance it is, trajectory will determine it
-        # taking [0] because batch size is 1
-        # todo: capture name error
-        prediction = self.start_detection_model.predict_proba(np.array([landmarks]))[0]
+        try:
+            # predict proba because there is no need to be sure that it is a particular class:
+            #   if there is a good chance it is, trajectory will determine it
+            # taking [0] because batch size is 1
+            prediction = self.start_detection_model.predict_proba(np.array([landmarks]))[0]
+        except AttributeError:
+            raise AttributeError("The start shape detection model has to have sklearn-like "
+                                 "predict_proba method and classes_ attribute.")
 
         possible_classes: List[str] = []
         for i in range(len(prediction)):
@@ -165,8 +168,12 @@ class DynamicDetector:
 
         prediction = None
         highest_proba = 0
-        # if there is an end detection model, check if the end shape is correct
-        end_prediction = self.end_detection_model.predict_proba(np.array([landmarks]))[0]
+        try:
+            end_prediction = self.end_detection_model.predict_proba(np.array([landmarks]))[0]
+        except AttributeError:
+            raise AttributeError("The end shape detection model has to have sklearn-like "
+                                 "predict_proba method and classes_ attribute.")
+
         for i in range(len(end_prediction)):
             if end_prediction[i] > self.end_pos_confidence and end_prediction[i] > highest_proba:
                 if self.verbose:
@@ -196,7 +203,8 @@ class DynamicDetector:
             prediction = self.evaluate_end_shape(landmarks, classes)
         else:
             if len(classes) > 1 and self.verbose:
-                print(f"Warning: multiple classes predicted: {classes}. Choosing the first one.")
+                print(f"Warning: multiple classes predicted simultaneously: {classes}. "
+                      f"Choosing the first one.")
             prediction = classes[0]
 
         if prediction is not None:
