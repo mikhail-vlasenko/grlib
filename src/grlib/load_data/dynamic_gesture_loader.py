@@ -45,6 +45,8 @@ class DynamicGestureLoader(BaseLoader):
         To separate different instances of gestures in a single class, the separator is used.
         :param output_trajectory_name: name of file for trajectory dataset
         """
+        if pipeline.num_hands != 1:
+            raise ValueError('DynamicGestureLoader only supports single hand gestures')
         super().__init__(pipeline, path, verbose)
         self.key_frames = key_frames
         self.trajectory_zero_precision = trajectory_zero_precision
@@ -155,7 +157,7 @@ class DynamicGestureLoader(BaseLoader):
         :param file: path to trajectories file, without loader root path.
         Defaults to self.output_trajectory_name.
         :return: list of trajectories as they can have different lengths and array of labels.
-        Each trajectory is a 2d numpy array
+        Each trajectory is a 2d numpy array.
         """
         if file is None:
             file = self.output_trajectory_name
@@ -167,12 +169,26 @@ class DynamicGestureLoader(BaseLoader):
         return trajectories, np.array(df['label'])
 
     @staticmethod
-    def get_start_shape(hand_shape_df: pd.DataFrame, num_hands: int):
+    def get_start_shape(hand_shape_df: pd.DataFrame):
         """
-        Provides a part of the dataframe that has starting shapes of the hands
-        :return: the part of the dataframe
+        Provides a part of the dataframe that has starting shapes of the hands.
+        Number of hands for a gesture in the dataset is always taken to be 1.
+        :return: the part of the dataframe.
         """
-        return hand_shape_df.iloc[:, :(63 * num_hands)]
+        return hand_shape_df.iloc[:, :63]
+
+    @staticmethod
+    def get_end_shape(hand_shape_df: pd.DataFrame):
+        """
+        Provides a part of the dataframe that has ending shapes of the hands.
+        Number of hands for a gesture in the dataset is always taken to be 1.
+        :return: the part of the dataframe.
+        """
+        columns = hand_shape_df.columns
+        i = 0
+        while columns[i] != 'handedness 1':
+            i += 1
+        return hand_shape_df.iloc[:, (i - 63):i]
 
     def _extract_prefix(self, file):
         return file.split(self.frame_set_separator)[0]

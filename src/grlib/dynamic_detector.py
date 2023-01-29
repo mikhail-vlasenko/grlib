@@ -28,22 +28,24 @@ class DynamicDetector:
         """
         :param start_shape_detection_model: model to predict probabilities of the start shapes.
         :param start_pos_confidence: how much certainty on the start shape detection model
-        is enough to include class for trajectory analysis.
-        Too high - no predictions.
-        Too low - different gestures with similar trajectories will be confused.
+            is enough to include class for trajectory analysis.
+            Too high - no predictions.
+            Too low - different gestures with similar trajectories will be confused.
         :param trajectory_classifier: the classifier to be used for trajectories.
         :param update_candidates_every: every x frame update() is called on candidates.
             This should be decreased if you have faster gestures,
             or the number of key frames is increased.
         :param candidate_zero_precision: displacement more than this (in image-relative coords)
             is considered movement for a candidate.
-        :param candidate_scale_zero_precision: if True, the zero precision is scaled.
+        :param candidate_scale_zero_precision: if True, the zero precision is scaled:
+            when there is a lot of movement on one axis,
+            other axi need to have more movement to be considered non-zero.
         :param candidate_old_multiplier: after this multiplied by update_candidates_every,
             the candidate is considered outdated and is dropped.
         :param end_shape_detection_model: model to predict probability that a completed trajectory
-        represents a gesture, based on the hand's shape in the end.
+            represents a gesture, based on the hand's shape in the end.
         :param end_pos_confidence: how much certainty on the end shape detection model
-        is enough to count the prediction complete.
+            is enough to count the prediction complete.
         :param verbose: whether to print debug info.
         """
         self.start_detection_model = start_shape_detection_model
@@ -114,6 +116,7 @@ class DynamicDetector:
         # proba because there is no need to be sure that it is a particular class:
         #   if there is a good chance it is, trajectory will determine it
         # taking [0] because batch size is 1
+        # todo: capture name error
         prediction = self.start_detection_model.predict_proba(np.array([landmarks]))[0]
 
         possible_classes: List[str] = []
@@ -150,18 +153,29 @@ class DynamicDetector:
         return possible_classes
 
     def evaluate_end_shape(self, landmarks: np.ndarray, classes: List[str]) -> Union[str, None]:
+        """
+        Evaluates the end shape of the hand and returns the class if it is correct.
+        :param landmarks: shape of the hand. Indifferent to its position within the frame.
+        :param classes: list of classes to check for.
+        :return: class if the end shape is correct, None otherwise.
+        At most one (the most probable) class is returned.
+        """
         if self.end_detection_model is None:
-            raise ValueError("End detection model is not set")
+            raise ValueError("End shape detection model is not set")
 
         prediction = None
+        highest_proba = 0
         # if there is an end detection model, check if the end shape is correct
         end_prediction = self.end_detection_model.predict_proba(np.array([landmarks]))[0]
         for i in range(len(end_prediction)):
-            if end_prediction[i] > self.end_pos_confidence:
+            if end_prediction[i] > self.end_pos_confidence and end_prediction[i] > highest_proba:
+                if self.verbose:
+                    print(f"Class {self.end_detection_model.classes_[i]} is likely to be the end hand shape")
                 for gesture_class in classes:
                     if gesture_class == self.end_detection_model.classes_[i]:
                         prediction = gesture_class
-                        break
+                        highest_proba = end_prediction[i]
+
         return prediction
 
     def get_prediction(self, landmarks: np.ndarray, hand_position: np.ndarray) -> Union[str, None]:

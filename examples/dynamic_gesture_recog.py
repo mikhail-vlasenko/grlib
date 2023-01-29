@@ -10,7 +10,7 @@ from src.grlib.trajectory.general_direction_builder import GeneralDirectionBuild
 import cv2.cv2 as cv
 import numpy as np
 
-from src.grlib.dynamic_detection import DynamicDetector
+from src.grlib.dynamic_detector import DynamicDetector
 from src.grlib.trajectory.trajectory_classifier import TrajectoryClassifier
 
 ZERO_PRECISION = 0.1
@@ -20,23 +20,34 @@ if __name__ == '__main__':
     pipeline = Pipeline(num_hands)
     pipeline.add_stage(0, 0)
 
+    # initialize the dataset loader
     loader = DynamicGestureLoader(
-        pipeline, '../src/left_right_dataset', trajectory_zero_precision=ZERO_PRECISION, key_frames=3
+        pipeline, '../data/dynamic_dataset', trajectory_zero_precision=ZERO_PRECISION, key_frames=3
     )
     loader.create_landmarks()
 
+    # read the landmarks, handedness and trajectories from the csv files
     landmarks = loader.load_landmarks()
     x_traj, y = loader.load_trajectories()
+
+    # reduce trajectories, i.e. convert [001, 000] to [001]
     x_traj = list(map(GeneralDirectionBuilder.filter_stationary, x_traj))
     x_traj = list(map(GeneralDirectionBuilder.filter_repeated, x_traj))
 
     trajectory_classifier = TrajectoryClassifier()
     trajectory_classifier.fit(x_traj, y)
 
-    start_shapes = loader.get_start_shape(landmarks, num_hands)
-    start_detection_model = LogisticRegression()
+    # create models for probabilistic start and end shapes recognition
+    start_shapes = loader.get_start_shape(landmarks)
+    start_detection_model = LogisticRegression(C=20.0)
     start_detection_model.fit(np.array(start_shapes), y)
 
+    end_shapes = loader.get_end_shape(landmarks)
+    end_detection_model = LogisticRegression(C=20.0)
+    end_detection_model.fit(np.array(end_shapes), y)
+
+    # make a dataframe with all the start shapes, their handedness and labels
+    # for the false positive filter (although shapes are irrelevant with confidence -1)
     fp_data = pd.DataFrame(np.array(start_shapes))
     for i in range(1, num_hands + 1):
         name = f'handedness {i}'
@@ -50,27 +61,34 @@ if __name__ == '__main__':
     run_pipeline = Pipeline(4)
     run_pipeline.add_stage(0, 0)
 
+    # initialize the dynamic gesture detector
     detector = DynamicDetector(
         start_detection_model,
-        start_pos_confidence=0.1,
+        start_pos_confidence=0.25,
         trajectory_classifier=trajectory_classifier,
         update_candidates_every=5,
         candidate_zero_precision=ZERO_PRECISION,
+        end_shape_detection_model=end_detection_model,
+        end_pos_confidence=0.25,
         verbose=True,
     )
 
+    # initialize the camera
     camera = cv.VideoCapture(0)
     font = cv.FONT_HERSHEY_SIMPLEX
     frame_cnt = 0
     last_pred = 0
     predicted_gesture = ""
+    # continuously read frames from the camera
     while True:
+        # get the frame from the camera
         ret, frame = camera.read()
         if not ret:
             continue
         if cv.waitKey(1) & 0xFF == ord('q'):
             break
 
+        # useful to know relative time
         frame_cnt += 1
         try:
             if last_pred < frame_cnt - 5:
@@ -96,12 +114,13 @@ if __name__ == '__main__':
                 # update candidates and get possible classes
                 classes = detector.update_candidates(hand_position_best)
                 if len(classes) != 0:
-                    prediction = classes[0]
-                    # prediction = detector.evaluate_end_shape(landmarks, classes)
+                    print(f'Complete trajectory for: {classes}')
+                    prediction = detector.evaluate_end_shape(landmarks_best, classes)
                 else:
                     prediction = None
 
                 if prediction is not None:
+                    # to display the prediction
                     predicted_gesture = prediction
                     last_pred = frame_cnt
                     # clean the current candidates because the gesture is found
@@ -119,8 +138,6 @@ if __name__ == '__main__':
         except NoHandDetectedException as e:
             # todo: clear candidates if no hand is detected for a while?
             cv.putText(frame, 'No hand detected', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
-
-        cv.putText(frame, f'Prediction: {predicted_gesture}', (10, 500), font, 1, (0, 255, 0), 2, cv.LINE_AA)
-        cv.imshow('Frame', frame)
-
-        # print('\r' + str(pipeline), end='')
+        finally:
+            cv.putText(frame, f'Prediction: {predicted_gesture}', (10, 500), font, 1, (0, 255, 0), 2, cv.LINE_AA)
+            cv.imshow('Frame', frame)

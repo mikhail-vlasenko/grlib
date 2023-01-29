@@ -4,7 +4,7 @@ import os
 import keyboard
 
 
-target_dir = 'left_right_dataset'
+target_dir = '../data/dynamic_dataset'
 
 
 def save_image(image: np.array, y: str, frame_set: int, image_idx: int):
@@ -20,7 +20,7 @@ def save_image(image: np.array, y: str, frame_set: int, image_idx: int):
 if __name__ == '__main__':
     camera = cv.VideoCapture(0)
 
-    cls = 'right'
+    cls = 'fist-up'
 
     # it is necessary to differentiate between frames taken for different instances of the
     # dynamic gesture.
