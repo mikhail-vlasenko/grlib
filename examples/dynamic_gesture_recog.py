@@ -24,6 +24,7 @@ if __name__ == '__main__':
     loader = DynamicGestureLoader(
         pipeline, '../data/dynamic_dataset', trajectory_zero_precision=ZERO_PRECISION, key_frames=3
     )
+    # this can be commented out after the first run
     loader.create_landmarks()
 
     # read the landmarks, handedness and trajectories from the csv files

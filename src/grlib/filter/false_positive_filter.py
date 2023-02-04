@@ -164,10 +164,12 @@ class FalsePositiveFilter(object):
     ) -> List[int]:
         """
         Works like best_hands_indices, but returns an empty list if something went wrong.
-        :param landmarks:
-        :param handedness:
-        :param return_hands:
-        :return: list of indices of hands to keep. len = return_hands, or empty list
+        :param landmarks: landmarks of all hands on the picture
+        :param handedness: the left/right info about all hands on the picture
+        :param return_hands: how many hands to return.
+        If 2, always chooses a left and a right hand.
+        :return: list of indices of hands to keep. len = return_hands,
+        or empty list if something went wrong
         """
         try:
             return self.best_hands_indices(landmarks, handedness, return_hands)

@@ -21,6 +21,7 @@ class DynamicDetector:
             candidate_zero_precision: float = 0.1,
             candidate_scale_zero_precision: bool = True,
             candidate_old_multiplier: float = 5,
+            candidate_min_time_diff: int = None,
             end_shape_detection_model=None,
             end_pos_confidence: float = 0.5,
             verbose=False,
@@ -42,6 +43,8 @@ class DynamicDetector:
             other axi need to have more movement to be considered non-zero.
         :param candidate_old_multiplier: after this multiplied by update_candidates_every,
             the candidate is considered outdated and is dropped.
+        :param candidate_min_time_diff: minimum start time difference between two candidates of the same class.
+            Defaults to half of update_candidates_every.
         :param end_shape_detection_model: model to predict probability that a completed trajectory
             represents a gesture, based on the hand's shape in the end.
         :param end_pos_confidence: how much certainty on the end shape detection model
@@ -61,6 +64,10 @@ class DynamicDetector:
         self.candidate_zero_precision = candidate_zero_precision
         self.candidate_scale_zero_precision = candidate_scale_zero_precision
         self.candidate_old_multiplier = candidate_old_multiplier
+        if candidate_min_time_diff is None:
+            self.candidate_min_time_diff = self.update_candidates_every / 2
+        else:
+            self.candidate_min_time_diff = candidate_min_time_diff
 
         self.verbose = verbose
         # currently, only single-handed dynamic gestures are supported
@@ -87,14 +94,14 @@ class DynamicDetector:
             # a candidate may also be too old to be considered
             if candidate.timestamp < oldest_allowed_timestamp:
                 continue
-            # update the candidate and check if it has reached the end (is valid)
+            # update the candidate and check if it has reached the end (is complete)
             if candidate.update(hand_position):
-                if candidate.valid:
+                if candidate.complete:
                     valid_classes.append(candidate.pred_class)
                     if self.verbose:
                         print(f"Complete trajectory for {valid_classes[-1]}")
                 else:
-                    # add back to the queue if it is not valid yet, but can be in the future
+                    # add back to the queue if it is not complete yet, but is still active
                     self.current_candidates.append(
                         (candidate, self.frame_cnt + self.update_candidates_every))
 
@@ -132,7 +139,7 @@ class DynamicDetector:
             for candidate, _ in self.current_candidates:
                 # trajectories don't have to be compared, as they were not updated yet
                 if candidate.pred_class == possible_gesture_class and \
-                        candidate.timestamp > self.frame_cnt - (self.update_candidates_every / 2):
+                        candidate.timestamp > self.frame_cnt - self.candidate_min_time_diff:
                     exists_recent = True
                     break
 
@@ -196,6 +203,8 @@ class DynamicDetector:
             # nothing was predicted
             return None
 
+        if self.verbose:
+            print(f"Complete trajectory for: {classes}")
         if self.end_detection_model is not None:
             prediction = self.evaluate_end_shape(landmarks, classes)
         else:
