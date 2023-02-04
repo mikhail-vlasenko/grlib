@@ -89,11 +89,11 @@ class DynamicDetector:
         # the candidates in the queue are sorted by the update timestamp
         while len(self.current_candidates) > 0 and self.current_candidates[0][1] <= self.frame_cnt:
             candidate, _ = self.current_candidates.popleft()
-            if self.verbose:
-                print(f"Updating {candidate}")
             # a candidate may also be too old to be considered
             if candidate.timestamp < oldest_allowed_timestamp:
                 continue
+            if self.verbose:
+                print(f"Updating {candidate}")
             # update the candidate and check if it has reached the end (is complete)
             if candidate.update(hand_position):
                 if candidate.complete:
@@ -220,3 +220,6 @@ class DynamicDetector:
 
     def clear_candidates(self):
         self.current_candidates.clear()
+
+    def count_frame(self):
+        self.frame_cnt += 1

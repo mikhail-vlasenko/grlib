@@ -137,6 +137,9 @@ if __name__ == '__main__':
                 detector.update_candidates(hand_position[0])
                 cv.putText(frame, 'Detected hands were filtered out', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
         except NoHandDetectedException as e:
+            # detector.update_candidates() is not called, but the frame counter,
+            # which acts a measure of time, still need to be updated
+            detector.count_frame()
             # todo: clear candidates if no hand is detected for a while?
             cv.putText(frame, 'No hand detected', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
         finally:
