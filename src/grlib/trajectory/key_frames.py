@@ -2,7 +2,7 @@ from typing import List
 
 import numpy as np
 
-from src.grlib.feature_extraction.mediapipe_landmarks import MediaPipe
+from src.grlib.feature_extraction.mediapipe_landmarks import hands_spacial_position
 
 
 def remove_outliers(landmark_sequence: List[np.ndarray]) -> List[np.ndarray]:
@@ -14,7 +14,7 @@ def remove_outliers(landmark_sequence: List[np.ndarray]) -> List[np.ndarray]:
     """
     positions = []
     for i in range(len(landmark_sequence)):
-        positions.append(MediaPipe.hands_spacial_position(landmark_sequence[i]))
+        positions.append(hands_spacial_position(landmark_sequence[i]))
 
     non_outliers = [landmark_sequence[0]]
     for i in range(1, len(landmark_sequence) - 1):
@@ -44,10 +44,10 @@ def extract_key_frames(landmark_sequence: List[np.ndarray], target_len: int) -> 
 
     # compute displacements between neighboring frames
     displacements: List[float] = [0]
-    last_pos = MediaPipe.hands_spacial_position(landmark_sequence[0])
+    last_pos = hands_spacial_position(landmark_sequence[0])
 
     for i in range(1, len(landmark_sequence)):
-        pos = MediaPipe.hands_spacial_position(landmark_sequence[i])
+        pos = hands_spacial_position(landmark_sequence[i])
         displacements.append(_distance(last_pos, pos))
         last_pos = pos.copy()
 

@@ -3,8 +3,7 @@ from typing import List, Union
 
 import numpy as np
 
-from src.grlib.feature_extraction.mediapipe_landmarks import MediaPipe
-
+from src.grlib.feature_extraction.mediapipe_landmarks import hands_spacial_position
 
 DIMENSIONS = 3  # x, y, and z (always 3 for consistency)
 
@@ -48,9 +47,9 @@ class GeneralDirectionBuilder:
         3 columns (for x, y, z) and len(landmark_sequence) rows
         """
         trajectory = []
-        last = MediaPipe.hands_spacial_position(landmark_sequence[0])[hand_num]
+        last = hands_spacial_position(landmark_sequence[0])[hand_num]
         for landmark in landmark_sequence[1:]:
-            current = MediaPipe.hands_spacial_position(landmark)[hand_num]
+            current = hands_spacial_position(landmark)[hand_num]
             directions = self.make_step_directions(last, current, self.zero_precision,
                                                    self.use_scaled_zero_precision)
             trajectory.append(directions)
@@ -68,6 +67,9 @@ class GeneralDirectionBuilder:
         :param use_scaled_zero_precision: if True, the zero precision is scaled.
         :return: the directions for the step
         """
+        if previous.shape != (DIMENSIONS,) or current.shape != (DIMENSIONS,):
+            raise ValueError(f"Expected 3D vectors, got {previous.shape} and {current.shape}")
+
         directions = []
         if use_scaled_zero_precision:
             # increase zero precision if the hand moved a lot

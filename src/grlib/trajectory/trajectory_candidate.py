@@ -1,5 +1,6 @@
 import numpy as np
 
+from src.grlib.exceptions import UpdateOnFinishedCandidateException
 from src.grlib.trajectory.general_direction_builder import Direction, GeneralDirectionBuilder
 
 
@@ -40,7 +41,8 @@ class TrajectoryCandidate:
         else:
             self.used_axi = used_axi
 
-        self.valid = False
+        self.active = True
+        self.complete = False
         # todo: allow more movement along the same axis? (in 2 consecutive calls of update),
         #   (only if its correct direction)
 
@@ -51,8 +53,12 @@ class TrajectoryCandidate:
         the candidate's remaining directions (`self.target`) are reduced.
         Should be called every X frame (5, 10 or something)
         :param position: new hand position
-        :return: if the trajectory may still be valid (but not necessarily IS valid)
+        :return: if the trajectory is still active. A wrong direction
+        invalidates the trajectory, and it becomes inactive.
         """
+        if self.complete:
+            raise UpdateOnFinishedCandidateException("Candidate is already valid")
+
         directions = GeneralDirectionBuilder.make_step_directions(
             self.position, position, self.zero_precision, self.use_scaled_zero_precision)
 
@@ -60,14 +66,15 @@ class TrajectoryCandidate:
             # only update if the axis is used
             if self.used_axi[a]:
                 if directions[i] != self.target[0][i]:
+                    self.active = False
                     return False
 
         if len(self.target) == 1:
-            self.valid = True
+            self.complete = True
         # remove one set of directions
         self.target = self.target[1:]
         self.position = np.copy(position)
         return True
 
     def __repr__(self):
-        return f'Candidate for {self.pred_class}: target={self.target}, position={self.position}'
+        return f'Candidate for {self.pred_class}: target=\n{self.target},\nposition={self.position}'

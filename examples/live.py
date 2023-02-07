@@ -1,4 +1,5 @@
-from src.grlib.exceptions import NoHandDetectedException
+from src.grlib.exceptions import NoHandDetectedException, HandsAreNotRepresentativeException
+from src.grlib.feature_extraction.mediapipe_landmarks import get_landmarks_at_position
 from src.grlib.feature_extraction.pipeline import Pipeline
 from src.grlib.load_data.by_folder_loader import ByFolderLoader
 from src.grlib.filter.false_positive_filter import FalsePositiveFilter
@@ -8,8 +9,10 @@ from sklearn.metrics import accuracy_score
 import cv2.cv2 as cv
 import numpy as np
 
+
 if __name__ == '__main__':
-    pipeline = Pipeline(1)
+    NUM_HANDS = 1
+    pipeline = Pipeline(NUM_HANDS)
     pipeline.add_stage(0, 0)
 
     loader = ByFolderLoader(pipeline, '../data/live')
@@ -51,20 +54,19 @@ if __name__ == '__main__':
         try:
             # detect hands on the picture. You can detect more hands than you intend to recognize
             landmarks, handedness = run_pipeline.get_world_landmarks_from_image(frame)
-            # drop non-suiting ones
-            landmarks, handedness = fp_filter.drop_wrong_hands(landmarks, handedness)
-            run_pipeline.optimize()
+            # get index of the best hand
+            index = fp_filter.best_hands_indices(landmarks, handedness, return_hands=NUM_HANDS)[0]
+            # select the best hand
+            landmarks = get_landmarks_at_position(landmarks, index)
+            handedness = handedness[index]
 
-            if len(landmarks) != 0:
-                prediction = model.predict(np.expand_dims(landmarks[0:63], axis=0))
-                cv.putText(frame, f'Class: {prediction[0]}, {handedness[0]}', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
-            else:
-                cv.putText(frame, 'No gesture detected', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
+            prediction = model.predict(np.expand_dims(landmarks, axis=0))
+            cv.putText(frame, f'Class: {prediction[0]}, {"left" if handedness == 0 else "right"}',
+                       (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
 
-            cv.imshow('Frame', frame)
+        except HandsAreNotRepresentativeException as e:
+            cv.putText(frame, 'No gesture detected', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
         except NoHandDetectedException as e:
             cv.putText(frame, 'No hand detected', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
-
+        finally:
             cv.imshow('Frame', frame)
-
-        # print('\r' + str(pipeline), end='')

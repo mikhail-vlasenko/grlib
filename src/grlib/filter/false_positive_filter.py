@@ -1,8 +1,10 @@
 import dataclasses
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 
 import numpy as np
 import pandas as pd
+
+from src.grlib.exceptions import HandsAreNotRepresentativeException
 
 
 @dataclasses.dataclass
@@ -100,29 +102,79 @@ class FalsePositiveFilter(object):
             return True
         return False
 
-    def drop_wrong_hands(
+    def best_hands_indices(
             self,
             landmarks: np.ndarray,
-            handedness: np.ndarray
-    ) -> (np.ndarray, np.ndarray):
+            handedness: np.ndarray,
+            return_hands: int = 1
+    ) -> List[int]:
         """
-        Specifically for 1-hand datasets, this function removes all hands,
-        whose handedness, combined with landmark similarity is not suited for the dataset.
+        Produces a list of indices of hands to keep,
+        whose handedness, combined with landmark similarity is most suited for the dataset.
         This helps with pictures which have too many hands.
         :param landmarks: landmarks of all hands on the picture
         :param handedness: the left/right info about all hands on the picture
-        :return: (reduced) set of landmarks and handednesses
+        :param return_hands: how many hands to return.
+        If 2, always chooses a left and a right hand.
+        :return: list of indices of hands to keep. len = return_hands
+        :raises HandsAreNotRepresentativeException: if there are not enough representative hands
+         to return the requested amount.
         """
-        res_landmarks = []
-        res_handedness = []
+        max_sim_left = -float('inf')
+        max_sim_right = -float('inf')
         n_hands = len(handedness)
+        if n_hands < return_hands:
+            raise HandsAreNotRepresentativeException(f'Not enough hands to choose {return_hands} hands.')
+
+        kept_indices = [-1, -1]
         one_hand_len = int(len(landmarks) / n_hands)
+        # iterate over all hand landmarks
         for i in range(n_hands):
             curr_landmarks = landmarks[i * one_hand_len:(i+1) * one_hand_len]
-            if self.is_relevant(curr_landmarks, handedness[i]):
-                res_landmarks.append(curr_landmarks)
-                res_handedness.append(handedness[i])
-        return np.array(res_landmarks).flatten(), np.array(res_handedness)
+            if handedness[i] == 0:
+                similarity, _ = self.closest_representative(curr_landmarks, handedness[i])
+                if similarity > max_sim_left and similarity > self.confidence:
+                    max_sim_left = similarity
+                    kept_indices[0] = i
+            elif handedness[i] == 1:
+                similarity, _ = self.closest_representative(curr_landmarks, handedness[i])
+                if similarity > max_sim_right and similarity > self.confidence:
+                    max_sim_right = similarity
+                    kept_indices[1] = i
+
+        if return_hands == 1:
+            if kept_indices[0] == -1 and kept_indices[1] == -1:
+                raise HandsAreNotRepresentativeException('Could not find any suitable hands.')
+            if max_sim_left > max_sim_right:
+                # return left hand index
+                return kept_indices[:1]
+            else:
+                # return right hand index
+                return kept_indices[1:]
+        else:
+            if kept_indices[0] == -1 or kept_indices[1] == -1:
+                raise HandsAreNotRepresentativeException('Could not find a left and a right hand.')
+            return kept_indices
+
+    def best_hands_indices_silent(
+            self,
+            landmarks: np.ndarray,
+            handedness: np.ndarray,
+            return_hands: int = 1
+    ) -> List[int]:
+        """
+        Works like best_hands_indices, but returns an empty list if something went wrong.
+        :param landmarks: landmarks of all hands on the picture
+        :param handedness: the left/right info about all hands on the picture
+        :param return_hands: how many hands to return.
+        If 2, always chooses a left and a right hand.
+        :return: list of indices of hands to keep. len = return_hands,
+        or empty list if something went wrong
+        """
+        try:
+            return self.best_hands_indices(landmarks, handedness, return_hands)
+        except HandsAreNotRepresentativeException:
+            return []
 
     @staticmethod
     def cosine_similarity(v1: np.ndarray, v2: np.ndarray) -> float:
