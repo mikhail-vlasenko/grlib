@@ -55,3 +55,24 @@ class BaseLoader(object):
         """
         # todo: return in separate arrays
         return pd.read_csv(self.path + file)
+
+    @staticmethod
+    def make_df_with_handedness(
+            landmarks: np.ndarray, handednesses: np.ndarray, labels: np.ndarray = None
+    ) -> pd.DataFrame:
+        """
+        Create a dataframe with landmarks and handednesses
+        :param landmarks: the list of landmarks
+        :param handednesses: the list of handednesses
+        :param labels: the list of labels
+        :return: the dataframe
+        """
+        axi = ['X', 'Y', 'Z']
+        df1 = pd.DataFrame(landmarks)
+        df1.columns = [f'L{i // 3}{axi[i % 3]}' for i in range(0, len(df1.columns))]
+        df2 = pd.DataFrame(handednesses)
+        df2.columns = [f'handedness {i}' for i in range(1, len(df2.columns) + 1)]
+        df = df1.join(df2)
+        if labels is not None:
+            df['label'] = labels
+        return df
