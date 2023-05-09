@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from os.path import join
 
 from ..feature_extraction.pipeline import Pipeline
 from ..load_data.base_loader import BaseLoader
@@ -27,7 +28,7 @@ class WithLabelsLoader(BaseLoader):
         :param output_file: the file path of the file to write to
         :return: None
         """
-        files = self.path + labels['path'] + '.jpg'
+        files = join(self.path, labels['path'] + '.jpg')
 
         results = []
         handedness_results = []
@@ -39,5 +40,9 @@ class WithLabelsLoader(BaseLoader):
         # Replace with 0s to keep the correct order with respect to the labels file
         results = [res if len(res) > 0 else np.zeros(self.pipeline.num_hands * 63) for res in results]
 
-        df = BaseLoader.make_df_with_handedness(np.array(results), np.array(handedness_results), labels['label'])
+        if 'label' in labels.columns:
+            label_column = labels['label']
+        else:
+            label_column = None
+        df = BaseLoader.make_df_with_handedness(np.array(results), np.array(handedness_results), label_column)
         df.to_csv(self.path + output_file, index=False)
