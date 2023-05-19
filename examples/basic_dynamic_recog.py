@@ -1,15 +1,20 @@
-import pandas as pd
-from sklearn.linear_model import LogisticRegression
+# Attempt to import grlib as a dependency, if that fails, try to assume it is a local project
+try:
+    from grlib.exceptions import NoHandDetectedException
+    from grlib.feature_extraction.mediapipe_landmarks import hands_spacial_position
+    from grlib.feature_extraction.pipeline import Pipeline
+    from grlib.load_data.dynamic_gesture_loader import DynamicGestureLoader
+    from grlib.trajectory.general_direction_builder import GeneralDirectionBuilder
+except ImportError as ex:
+    from src.grlib.exceptions import NoHandDetectedException
+    from src.grlib.feature_extraction.mediapipe_landmarks import hands_spacial_position
+    from src.grlib.feature_extraction.pipeline import Pipeline
+    from src.grlib.load_data.dynamic_gesture_loader import DynamicGestureLoader
+    from src.grlib.trajectory.general_direction_builder import GeneralDirectionBuilder
 
-from src.grlib.exceptions import NoHandDetectedException
-from src.grlib.feature_extraction.mediapipe_landmarks import get_landmarks_at_position, hands_spacial_position
-from src.grlib.feature_extraction.pipeline import Pipeline
-from src.grlib.filter.false_positive_filter import FalsePositiveFilter
-from src.grlib.load_data.dynamic_gesture_loader import DynamicGestureLoader
-from src.grlib.trajectory.general_direction_builder import GeneralDirectionBuilder
+from sklearn.linear_model import LogisticRegression
 import cv2.cv2 as cv
 import numpy as np
-
 from src.grlib.dynamic_detector import DynamicDetector
 from src.grlib.trajectory.trajectory_classifier import TrajectoryClassifier
 

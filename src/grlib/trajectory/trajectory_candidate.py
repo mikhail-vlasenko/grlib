@@ -1,7 +1,7 @@
 import numpy as np
 
-from src.grlib.exceptions import UpdateOnFinishedCandidateException
-from src.grlib.trajectory.general_direction_builder import Direction, GeneralDirectionBuilder
+from ..exceptions import UpdateOnFinishedCandidateException
+from ..trajectory.general_direction_builder import Direction, GeneralDirectionBuilder
 
 
 class TrajectoryCandidate:

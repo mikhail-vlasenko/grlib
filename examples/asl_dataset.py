@@ -1,20 +1,18 @@
-import pandas as pd
+# Attempt to import grlib as a dependency, if that fails, try to assume it is a local project
+try:
+    from grlib.feature_extraction.pipeline import Pipeline
+    from grlib.load_data.by_folder_loader import ByFolderLoader
+except ImportError as ex:
+    from src.grlib.feature_extraction.pipeline import Pipeline
+    from src.grlib.load_data.by_folder_loader import ByFolderLoader
 
-from src.grlib.exceptions import NoHandDetectedException
-from src.grlib.feature_extraction.mediapipe_landmarks import MediaPipe
-from src.grlib.feature_extraction.pipeline import Pipeline
-from src.grlib.load_data.by_folder_loader import ByFolderLoader
-from src.grlib.load_data.with_labels_loader import WithLabelsLoader
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
-import cv2 as cv
 import numpy as np
 
-from src.grlib.filter.false_positive_filter import FalsePositiveFilter
-
 if __name__ == '__main__':
-    pipeline = Pipeline(num_hands=2)
+    pipeline = Pipeline(num_hands=1)
     pipeline.add_stage(0, 0)
     pipeline.add_stage(30, 0)
     pipeline.add_stage(60, 0)
