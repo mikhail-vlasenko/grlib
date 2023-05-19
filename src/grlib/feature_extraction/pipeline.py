@@ -121,6 +121,7 @@ class Pipeline(object):
         :raise: NoHandDetectedException
         """
         hands, handedness = self.run_pipeline(image, run_stage_landmarks)
+        self.sort_landmarks(hands, handedness)
         return hands.flatten(), handedness
 
     def get_world_landmarks_from_image(self, image: np.ndarray) -> (np.ndarray, np.ndarray):
@@ -131,7 +132,36 @@ class Pipeline(object):
         :raise: NoHandDetectedException
         """
         hands, handedness = self.run_pipeline(image, run_stage_world_landmarks)
+        self.sort_landmarks(hands, handedness)
         return hands.flatten(), handedness
+
+    def sort_landmarks(self, landmarks: np.ndarray, handedness: np.ndarray):
+        """
+        Method to make an in-place sort of landmarks (and handedness) based on handedness.
+        The resulting landmarks first have landmarks corresponding to the right hand, then the left hand
+        and finally the landmarks corresponding to when there was no hand detected.
+        :param landmarks: the landmarks to sort.
+        :param handedness: the handedness to sort, also used as the key to sort.
+        """
+        if len(handedness) < 2:
+            return
+
+        hands = []
+        features_per_hand = len(landmarks) // self.num_hands
+        for hand in range(self.num_hands):
+            lower_index = features_per_hand * hand
+            upper_index = features_per_hand * (hand + 1)
+            corresponding_landmarks = landmarks[lower_index:upper_index, :]
+            corresponding_handedness = handedness[hand]
+            hands.append((corresponding_landmarks, corresponding_handedness))
+
+        hands = sorted(hands, key=lambda hand: hand[1], reverse=True)
+
+        for hand in range(self.num_hands):
+            lower_index = features_per_hand * hand
+            upper_index = features_per_hand * (hand + 1)
+            landmarks[lower_index:upper_index, :] = hands[hand][0]
+            handedness[hand] = hands[hand][1]
 
     def __str__(self) -> str:
         """
