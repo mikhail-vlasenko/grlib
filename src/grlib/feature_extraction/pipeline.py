@@ -1,8 +1,8 @@
 from multiprocessing.pool import ThreadPool
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
-from ..exceptions import NoHandDetectedException
+from ..exceptions import NoHandDetectedException, MaximumTwoHandsSupportedException
 from ..feature_extraction.mediapipe_landmarks import MediaPipe
 from ..feature_extraction.stage import Stage
 import cv2.cv2 as cv
@@ -38,6 +38,8 @@ class Pipeline(object):
         :param num_hands: the number of hands that can maximally be detected
         :param optimize_pipeline: boolean to specify whether the order of the pipeline should be optimized
         """
+        if num_hands > 2:
+            raise MaximumTwoHandsSupportedException('GRLib supports a maximum of 2 hands')
         self.num_hands = num_hands
         self.optimize_pipeline = optimize_pipeline
         self.total = 0
@@ -121,7 +123,7 @@ class Pipeline(object):
         :raise: NoHandDetectedException
         """
         hands, handedness = self.run_pipeline(image, run_stage_landmarks)
-        self.sort_landmarks(hands, handedness)
+        hands, handedness = self.reorder_landmarks(hands, handedness)
         return hands.flatten(), handedness
 
     def get_world_landmarks_from_image(self, image: np.ndarray) -> (np.ndarray, np.ndarray):
@@ -132,36 +134,43 @@ class Pipeline(object):
         :raise: NoHandDetectedException
         """
         hands, handedness = self.run_pipeline(image, run_stage_world_landmarks)
-        self.sort_landmarks(hands, handedness)
+        hands, handedness = self.reorder_landmarks(hands, handedness)
         return hands.flatten(), handedness
 
-    def sort_landmarks(self, landmarks: np.ndarray, handedness: np.ndarray):
+    def reorder_landmarks(self, landmarks: np.ndarray, handedness: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Method to make an in-place sort of landmarks (and handedness) based on handedness.
-        The resulting landmarks first have landmarks corresponding to the right hand, then the left hand
-        and finally the landmarks corresponding to when there was no hand detected.
-        :param landmarks: the landmarks to sort.
-        :param handedness: the handedness to sort, also used as the key to sort.
+        Method to order landmarks based on the handedness. The left hand goes first, then the right one.
+        :param landmarks: the landmarks to order.
+        :param handedness: the handedness based on which to order the landmarks.
+        :return: the ordered landmarks.
         """
-        if len(handedness) < 2:
-            return
+        if self.num_hands != 2:
+            return landmarks, handedness
 
-        hands = []
+        hands = {}
         features_per_hand = len(landmarks) // self.num_hands
         for hand in range(self.num_hands):
             lower_index = features_per_hand * hand
             upper_index = features_per_hand * (hand + 1)
             corresponding_landmarks = landmarks[lower_index:upper_index, :]
             corresponding_handedness = handedness[hand]
-            hands.append((corresponding_landmarks, corresponding_handedness))
+            if corresponding_handedness in hands:
+                # Doesn't reorder landmarks that have right/left hand twice
+                return landmarks, handedness
 
-        hands = sorted(hands, key=lambda hand: hand[1], reverse=True)
+            hands[corresponding_handedness] = corresponding_landmarks
 
-        for hand in range(self.num_hands):
-            lower_index = features_per_hand * hand
-            upper_index = features_per_hand * (hand + 1)
-            landmarks[lower_index:upper_index, :] = hands[hand][0]
-            handedness[hand] = hands[hand][1]
+        new_landmarks = np.zeros(landmarks.shape)
+        new_handedness = np.full(handedness.shape, -1)
+
+        for handedness, landmarks in hands.items():
+            if handedness != -1:
+                lower_index = features_per_hand * handedness
+                upper_index = features_per_hand * (handedness + 1)
+                new_landmarks[lower_index:upper_index, :] = landmarks
+                new_handedness[handedness] = handedness
+
+        return new_landmarks, new_handedness
 
     def __str__(self) -> str:
         """

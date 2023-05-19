@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score
 import numpy as np
 
 if __name__ == '__main__':
-    pipeline = Pipeline(num_hands=2)
+    pipeline = Pipeline(num_hands=1)
     pipeline.add_stage(0, 0)
     pipeline.add_stage(30, 0)
     pipeline.add_stage(60, 0)
