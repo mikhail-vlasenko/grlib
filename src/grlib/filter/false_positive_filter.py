@@ -4,7 +4,7 @@ from typing import Tuple, Dict, List
 import numpy as np
 import pandas as pd
 
-from src.grlib.exceptions import HandsAreNotRepresentativeException
+from ..exceptions import HandsAreNotRepresentativeException
 
 
 @dataclasses.dataclass

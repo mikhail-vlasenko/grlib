@@ -4,7 +4,7 @@ import numpy as np
 import math
 from collections import Counter
 
-from src.grlib.trajectory.general_direction_builder import DIMENSIONS
+from ..trajectory.general_direction_builder import DIMENSIONS
 
 
 class TrajectoryClassifier:

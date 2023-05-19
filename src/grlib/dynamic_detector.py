@@ -3,8 +3,8 @@ from typing import List, Union
 import numpy as np
 from collections import deque
 
-from src.grlib.trajectory.trajectory_candidate import TrajectoryCandidate
-from src.grlib.trajectory.trajectory_classifier import TrajectoryClassifier
+from .trajectory.trajectory_candidate import TrajectoryCandidate
+from .trajectory.trajectory_classifier import TrajectoryClassifier
 
 
 class DynamicDetector:

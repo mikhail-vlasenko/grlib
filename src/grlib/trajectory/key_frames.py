@@ -2,7 +2,7 @@ from typing import List
 
 import numpy as np
 
-from src.grlib.feature_extraction.mediapipe_landmarks import hands_spacial_position
+from ..feature_extraction.mediapipe_landmarks import hands_spacial_position
 
 
 def remove_outliers(landmark_sequence: List[np.ndarray]) -> List[np.ndarray]:

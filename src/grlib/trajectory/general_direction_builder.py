@@ -3,7 +3,7 @@ from typing import List, Union
 
 import numpy as np
 
-from src.grlib.feature_extraction.mediapipe_landmarks import hands_spacial_position
+from ..feature_extraction.mediapipe_landmarks import hands_spacial_position
 
 DIMENSIONS = 3  # x, y, and z (always 3 for consistency)
 
