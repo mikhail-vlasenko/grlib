@@ -59,10 +59,5 @@ class ByFolderLoader(BaseLoader):
                 handednesses.append(result[1])
                 labels.append(folder)
 
-        df1 = pd.DataFrame(np.array(landmarks))
-        df2 = pd.DataFrame(np.array(handednesses))
-        df2.columns = [f'handedness {i}' for i in range(1, len(df2.columns)+1)]
-        df = df1.join(df2)
-        df['label'] = np.array(labels)
-
+        df = BaseLoader.make_df_with_handedness(np.array(landmarks), np.array(handednesses), np.array(labels))
         df.to_csv(self.path + output_file, index=False)
