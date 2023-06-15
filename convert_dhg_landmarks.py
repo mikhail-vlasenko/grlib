@@ -13,6 +13,13 @@ def remove_palm_center(landmarks):
     return landmarks.reshape((landmarks.shape[0], 21, 3))
 
 
+def recenter_landmarks(landmarks):
+    landmarks = landmarks.reshape((landmarks.shape[0], 21, 3))
+    palm_center = np.mean(landmarks, axis=1)
+    landmarks = landmarks - palm_center[:, np.newaxis, :]
+    return landmarks.reshape((landmarks.shape[0], 21, 3))
+
+
 def show_image():
     depth_map = plt.imread(file)
 
@@ -20,6 +27,7 @@ def show_image():
     landmarks = landmarks.reshape((landmarks.shape[0], 22, 3))
 
     landmarks = remove_palm_center(landmarks)
+    landmarks = recenter_landmarks(landmarks)
 
     img_landmarks = np.loadtxt(prefix + 'skeleton_image.txt')
     img_landmarks = img_landmarks.reshape((landmarks.shape[0], 22, 2))
@@ -51,5 +59,5 @@ def show_3d():
 
 
 if __name__ == '__main__':
-    # show_image()
-    show_3d()
+    show_image()
+    # show_3d()

@@ -58,7 +58,14 @@ class DynamicGestureLoader(BaseLoader):
         """
         Processes images of gestures and saves shapes and trajectories to csv.
         Images are labelled with their folder's name.
-        takes a while
+        Takes a while.
+        General steps per gesture instance:
+            1. Extract world and image-relative landmarks for all frames
+            2. Extract key frames indices
+            3. Build trajectories from image-relative landmarks at key indices
+            4. Make hand_shape_encoding from world landmarks at key indices
+            5. Add hand_shape_encoding, trajectory and handedness to results
+        Then write all results to two csv files. One for hand shapes and handedness, one for trajectory.
         :param output_file: the file path of the file to write to
         :return: None
         """
@@ -123,7 +130,7 @@ class DynamicGestureLoader(BaseLoader):
                 # trajectory needs image-relative landmarks
                 trajectory = self.trajectory_builder.make_trajectory(key_image_landmarks)
 
-                # hand shape needs hand-centered
+                # hand shape needs hand-centered landmarks
                 hand_shape_encoding = np.array([], dtype=float)
                 for lm in key_world_landmarks:
                     hand_shape_encoding = np.concatenate((hand_shape_encoding, lm), axis=None)

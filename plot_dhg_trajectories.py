@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib
 matplotlib.use('TkAgg')  # use TkAgg backend which shows plots in a new window
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
-prefix = 'data/DHG2016/gesture_5/finger_2/subject_3/essai_1/'
+
+prefix = 'data/DHG2016/gesture_1/finger_2/subject_3/essai_1/'
 # Input data, each row corresponds to a time point
 data = np.loadtxt(f'{prefix}skeleton_world.txt')
 
