@@ -103,7 +103,9 @@ def test_on_dhg():
     x_traj = list(map(GeneralDirectionBuilder.filter_stationary, x_traj))
     x_traj = list(map(GeneralDirectionBuilder.filter_repeated, x_traj))
 
-    trajectory_classifier = TrajectoryClassifier(allow_multiple=True, popularity_threshold=0.2)
+    trajectory_classifier = TrajectoryClassifier(
+        allow_multiple=True, popularity_threshold=0.05, include_empty_trajectories=True
+    )
     trajectory_classifier.fit(x_traj, y)
 
     # create models for probabilistic start and end shapes recognition
@@ -111,14 +113,14 @@ def test_on_dhg():
     start_detection_model = LogisticRegression(C=20.0, max_iter=1000)
     start_detection_model.fit(np.array(start_shapes), y)
 
-    end_shapes = DynamicGestureLoader.get_end_shape(landmarks)
-    end_detection_model = LogisticRegression(C=20.0, max_iter=1000)
-    end_detection_model.fit(np.array(end_shapes), y)
+    # end_shapes = DynamicGestureLoader.get_end_shape(landmarks)
+    # end_detection_model = LogisticRegression(C=20.0, max_iter=1000)
+    # end_detection_model.fit(np.array(end_shapes), y)
 
     # initialize the dynamic gesture detector
     detector = DynamicDetector(
         start_detection_model,
-        start_pos_confidence=0.1,
+        start_pos_confidence=0.05,
         trajectory_classifier=trajectory_classifier,
         update_candidates_every=20,
         candidate_min_time_diff=4,
@@ -130,7 +132,7 @@ def test_on_dhg():
     total_gestures = 0
     for gesture in range(1, 15):
         for subject in range(1, 21):
-            for trial in range(1, 6):
+            for trial in range(1, 3):
                 total_gestures += 1
                 file_path = get_file_path(gesture, finger, subject, trial)
                 # Input data, each row corresponds to a time point
@@ -164,6 +166,7 @@ def test_on_dhg():
                     if prediction == gesture:
                         correct_predictions += 1
 
+    print(f'Predictions given: {total_predictions / total_gestures}')
     print(f'Correct from predictions: {correct_predictions / total_predictions}')
     print(f'Correct from given gestures: {correct_predictions / total_gestures}')
 

@@ -8,7 +8,13 @@ from ..trajectory.general_direction_builder import DIMENSIONS
 
 
 class TrajectoryClassifier:
-    def __init__(self, allow_multiple=True, popularity_threshold=0.3, verbose=False):
+    def __init__(
+            self,
+            allow_multiple=True,
+            popularity_threshold=0.3,
+            include_empty_trajectories=True,
+            verbose=False
+    ):
         """
 
         :param allow_multiple: whether to allow multiple trajectories for the same gesture.
@@ -20,7 +26,9 @@ class TrajectoryClassifier:
         self.repr_trajectories: Dict[str, List[np.ndarray]] = dict()
         self.allow_multiple = allow_multiple
         self.popularity_threshold = popularity_threshold
+        self.include_empty_trajectories = include_empty_trajectories
         self.verbose = verbose
+        self._gave_empty_trajectory_warning = False
 
     def fit(
             self,
@@ -37,6 +45,14 @@ class TrajectoryClassifier:
             raise ValueError("Number of trajectories and gestures must match")
         temp_gestures: Dict[str, List[np.ndarray]] = dict()
         for i in range(len(trajectories)):
+            if len(trajectories[i]) == 0:
+                if not self.include_empty_trajectories:
+                    continue
+                if not self._gave_empty_trajectory_warning:
+                    # the likely reason for an empty trajectory is reduction via filter_stationary and filter_repeated
+                    print("Warning: empty trajectory encountered. "
+                          "A gesture may be treated as static if such trajectory is considered representative.")
+                    self._gave_empty_trajectory_warning = True
             if gestures[i] not in temp_gestures:
                 temp_gestures[gestures[i]] = [trajectories[i]]
             else:

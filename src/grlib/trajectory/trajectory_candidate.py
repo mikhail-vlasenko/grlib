@@ -59,6 +59,11 @@ class TrajectoryCandidate:
         if self.complete:
             raise UpdateOnFinishedCandidateException("Candidate is already valid")
 
+        if len(self.target) == 0:
+            # this can happen if the target is empty from the start
+            self.complete = True
+            return True
+
         directions = GeneralDirectionBuilder.make_step_directions(
             self.position, position, self.zero_precision, self.use_scaled_zero_precision)
 
