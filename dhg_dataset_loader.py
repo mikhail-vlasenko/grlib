@@ -21,6 +21,9 @@ def get_file_path(gesture, finger, subject, trial):
     return f'data/DHG2016/gesture_{gesture}/finger_{finger}/subject_{subject}/essai_{trial}/skeleton_world.txt'
 
 
+# only use whole hand gestures
+finger = 2
+
 key_frames = 3
 zero_precision = 0.02
 trajectory_builder = GeneralDirectionBuilder(zero_precision)
@@ -30,7 +33,6 @@ def extract_info(file_path):
     img_landmarks = np.loadtxt(file_path)
 
     img_landmarks = remove_palm_center(img_landmarks)
-
     world_landmarks = recenter_landmarks(img_landmarks)
 
     key_indices: List[int] = extract_key_frames(img_landmarks, key_frames)
@@ -56,19 +58,18 @@ def make_dataset():
     class_labels = []
 
     for gesture in range(1, 15):
-        for finger in range(1, 3):
-            for subject in range(1, 21):
-                for trial in range(1, 6):
-                    file_path = get_file_path(gesture, finger, subject, trial)
-                    if not os.path.exists(file_path):
-                        raise ValueError(f'File {file_path} does not exist')
+        for subject in range(1, 21):
+            for trial in range(1, 6):
+                file_path = get_file_path(gesture, finger, subject, trial)
+                if not os.path.exists(file_path):
+                    raise ValueError(f'File {file_path} does not exist')
 
-                    hand_shape_encoding, trajectory = extract_info(file_path)
-                    landmarks_results.append(hand_shape_encoding)
-                    trajectory_results.append(trajectory)
-                    handedness_results.append(0)
-                    # append folder name as class label
-                    class_labels.append(gesture)
+                hand_shape_encoding, trajectory = extract_info(file_path)
+                landmarks_results.append(hand_shape_encoding)
+                trajectory_results.append(trajectory)
+                handedness_results.append(0)
+                # append folder name as class label
+                class_labels.append(gesture)
 
     hand_shape_df = pd.DataFrame(landmarks_results)
     trajectory_df = pd.DataFrame(trajectory_results)
@@ -87,7 +88,9 @@ def make_dataset():
     trajectory_df.to_csv('data/DHG2016/trajectories.csv', index=False)
 
 
-if __name__ == '__main__':
+def test_on_dhg():
+    # make_dataset()
+    # print('Dataset created')
     landmarks = pd.read_csv('data/DHG2016/landmarks.csv')
 
     df = pd.read_csv('data/DHG2016/trajectories.csv')
@@ -100,7 +103,7 @@ if __name__ == '__main__':
     x_traj = list(map(GeneralDirectionBuilder.filter_stationary, x_traj))
     x_traj = list(map(GeneralDirectionBuilder.filter_repeated, x_traj))
 
-    trajectory_classifier = TrajectoryClassifier(allow_multiple=True, popularity_threshold=0.1)
+    trajectory_classifier = TrajectoryClassifier(allow_multiple=True, popularity_threshold=0.2)
     trajectory_classifier.fit(x_traj, y)
 
     # create models for probabilistic start and end shapes recognition
@@ -119,28 +122,51 @@ if __name__ == '__main__':
         trajectory_classifier=trajectory_classifier,
         update_candidates_every=20,
         candidate_min_time_diff=4,
-        verbose=True,
+        verbose=False,
     )
 
-    prefix = 'data/DHG2016/gesture_7/finger_2/subject_3/essai_2/'
-    # Input data, each row corresponds to a time point
-    data = np.loadtxt(f'{prefix}skeleton_world.txt')
+    correct_predictions = 0
+    total_predictions = 0
+    total_gestures = 0
+    for gesture in range(1, 15):
+        for subject in range(1, 21):
+            for trial in range(1, 6):
+                total_gestures += 1
+                file_path = get_file_path(gesture, finger, subject, trial)
+                # Input data, each row corresponds to a time point
+                landmarks = np.loadtxt(file_path)
+                landmarks = landmarks.reshape((landmarks.shape[0], 22, 3))
 
-    landmarks = data.reshape((data.shape[0], 22, 3))
+                img_landmarks = remove_palm_center(landmarks)
+                world_landmarks = recenter_landmarks(img_landmarks)
+                world_landmarks = world_landmarks.reshape((world_landmarks.shape[0], 63))
 
-    img_landmarks = remove_palm_center(landmarks)
-    world_landmarks = recenter_landmarks(img_landmarks)
-    world_landmarks = world_landmarks.reshape((world_landmarks.shape[0], 63))
+                prediction = None
+                for i in range(len(landmarks)):
+                    hand_position = hands_spacial_position(img_landmarks[i])
+                    predicted_gesture = detector.get_prediction(world_landmarks[i], hand_position[0])
+                    if predicted_gesture is not None:
+                        prediction = predicted_gesture
+                        break
 
-    for i in range(len(data)):
-        hand_position = hands_spacial_position(img_landmarks[i])
-        predicted_gesture = detector.get_prediction(world_landmarks[i], hand_position[0])
-        if predicted_gesture is not None:
-            print(f'\nPredicted gesture: {predicted_gesture}\n')
+                if prediction is None:
+                    # fill the end with the final frame (as if the hand has stopped moving)
+                    # to give the detector a chance to detect the end
+                    for i in range(20):
+                        hand_position = hands_spacial_position(img_landmarks[-1])
+                        predicted_gesture = detector.get_prediction(world_landmarks[-1], hand_position[0])
+                        if predicted_gesture is not None:
+                            prediction = predicted_gesture
+                            break
 
-    print('------------------')
+                if prediction is not None:
+                    total_predictions += 1
+                    if prediction == gesture:
+                        correct_predictions += 1
 
-    for i in range(30):
-        hand_position = hands_spacial_position(img_landmarks[-1])
-        predicted_gesture = detector.get_prediction(world_landmarks[-1], hand_position[0])
+    print(f'Correct from predictions: {correct_predictions / total_predictions}')
+    print(f'Correct from given gestures: {correct_predictions / total_gestures}')
 
+
+if __name__ == '__main__':
+    test_on_dhg()
