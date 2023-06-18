@@ -43,11 +43,11 @@ class TrajectoryClassifier:
                 temp_gestures[gestures[i]].append(trajectories[i])
 
         for key, value in temp_gestures.items():
-            # convert to string so it can be hashed
-            counts = Counter(arr.tostring() for arr in value)
+            # convert to binary string so it can be hashed
+            counts = Counter(arr.tobytes() for arr in value)
             if not self.allow_multiple:
-                most_common_arr = np.fromstring(
-                    counts.most_common(1)[0][0], dtype=int).reshape((-1, DIMENSIONS))
+                most_common_arr = np.frombuffer(
+                    counts.most_common(1)[0][0], dtype=np.int64).reshape((-1, DIMENSIONS))
                 self.repr_trajectories[key] = [most_common_arr]
             else:
                 # with such popularity, at most that many trajectories will be stored
@@ -55,8 +55,10 @@ class TrajectoryClassifier:
                 most_common = counts.most_common(most_considered)
                 most_common_trajectories = []
                 for t in most_common:
-                    most_common_trajectories.append(np.fromstring(
-                        t[0], dtype=int).reshape((-1, DIMENSIONS)))
+                    # if the trajectory is popular enough, or if no trajectories are added, add it
+                    if t[1] / len(value) >= self.popularity_threshold or len(most_common_trajectories) == 0:
+                        popular_trajectory_arr = np.frombuffer(t[0], dtype=np.int64).reshape((-1, DIMENSIONS))
+                        most_common_trajectories.append(popular_trajectory_arr)
                 self.repr_trajectories[key] = most_common_trajectories
 
         if self.verbose:

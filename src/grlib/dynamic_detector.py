@@ -131,6 +131,9 @@ class DynamicDetector:
             if prediction[i] >= self.start_pos_confidence:
                 possible_classes.append(self.start_detection_model.classes_[i])
 
+        if self.verbose:
+            print(f"Possible new classes: {possible_classes}")
+
         for possible_gesture_class in possible_classes:
             target_trajectories = self.trajectory_classifier.get_trajectories(possible_gesture_class)
 
