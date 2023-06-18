@@ -3,8 +3,10 @@ from typing import List
 
 import numpy as np
 import pandas as pd
-from natsort import natsorted
+from tqdm import tqdm
 from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+import catboost
 
 from convert_dhg_landmarks import remove_palm_center, recenter_landmarks
 from src.grlib.feature_extraction.mediapipe_landmarks import hands_spacial_position
@@ -104,13 +106,14 @@ def test_on_dhg():
     x_traj = list(map(GeneralDirectionBuilder.filter_repeated, x_traj))
 
     trajectory_classifier = TrajectoryClassifier(
-        allow_multiple=True, popularity_threshold=0.05, include_empty_trajectories=True
+        allow_multiple=True, popularity_threshold=0.1, include_empty_trajectories=False
     )
     trajectory_classifier.fit(x_traj, y)
 
     # create models for probabilistic start and end shapes recognition
     start_shapes = DynamicGestureLoader.get_start_shape(landmarks)
-    start_detection_model = LogisticRegression(C=20.0, max_iter=1000)
+    start_detection_model = KNeighborsClassifier(1)
+    # start_detection_model = catboost.CatBoostClassifier()
     start_detection_model.fit(np.array(start_shapes), y)
 
     # end_shapes = DynamicGestureLoader.get_end_shape(landmarks)
@@ -120,7 +123,7 @@ def test_on_dhg():
     # initialize the dynamic gesture detector
     detector = DynamicDetector(
         start_detection_model,
-        start_pos_confidence=0.05,
+        start_pos_confidence=0.3,
         trajectory_classifier=trajectory_classifier,
         update_candidates_every=20,
         candidate_min_time_diff=4,
@@ -130,9 +133,9 @@ def test_on_dhg():
     correct_predictions = 0
     total_predictions = 0
     total_gestures = 0
-    for gesture in range(1, 15):
+    for gesture in tqdm(range(1, 15)):
         for subject in range(1, 21):
-            for trial in range(1, 3):
+            for trial in range(1, 2):
                 total_gestures += 1
                 file_path = get_file_path(gesture, finger, subject, trial)
                 # Input data, each row corresponds to a time point
@@ -165,10 +168,11 @@ def test_on_dhg():
                     total_predictions += 1
                     if prediction == gesture:
                         correct_predictions += 1
+                detector.reset()
 
     print(f'Predictions given: {total_predictions / total_gestures}')
     print(f'Correct from predictions: {correct_predictions / total_predictions}')
-    print(f'Correct from given gestures: {correct_predictions / total_gestures}')
+    print(f'Correct overall: {correct_predictions / total_gestures}')
 
 
 if __name__ == '__main__':

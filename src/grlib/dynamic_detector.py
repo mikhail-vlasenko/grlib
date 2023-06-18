@@ -226,3 +226,7 @@ class DynamicDetector:
 
     def count_frame(self):
         self.frame_cnt += 1
+
+    def reset(self):
+        self.clear_candidates()
+        self.frame_cnt = 0
