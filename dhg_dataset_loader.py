@@ -7,6 +7,7 @@ from natsort import natsorted
 from sklearn.linear_model import LogisticRegression
 
 from convert_dhg_landmarks import remove_palm_center, recenter_landmarks
+from src.grlib.feature_extraction.mediapipe_landmarks import hands_spacial_position
 from src.grlib.feature_extraction.pipeline import Pipeline
 from src.grlib.load_data.base_loader import BaseLoader
 from src.grlib.trajectory.general_direction_builder import GeneralDirectionBuilder
@@ -99,28 +100,47 @@ if __name__ == '__main__':
     x_traj = list(map(GeneralDirectionBuilder.filter_stationary, x_traj))
     x_traj = list(map(GeneralDirectionBuilder.filter_repeated, x_traj))
 
-    trajectory_classifier = TrajectoryClassifier()
+    trajectory_classifier = TrajectoryClassifier(allow_multiple=True, popularity_threshold=0.1)
     trajectory_classifier.fit(x_traj, y)
 
     # create models for probabilistic start and end shapes recognition
     start_shapes = DynamicGestureLoader.get_start_shape(landmarks)
-    start_detection_model = LogisticRegression(C=20.0)
+    start_detection_model = LogisticRegression(C=20.0, max_iter=1000)
     start_detection_model.fit(np.array(start_shapes), y)
 
     end_shapes = DynamicGestureLoader.get_end_shape(landmarks)
-    end_detection_model = LogisticRegression(C=20.0)
+    end_detection_model = LogisticRegression(C=20.0, max_iter=1000)
     end_detection_model.fit(np.array(end_shapes), y)
 
     # initialize the dynamic gesture detector
     detector = DynamicDetector(
         start_detection_model,
-        start_pos_confidence=0.25,
+        start_pos_confidence=0.1,
         trajectory_classifier=trajectory_classifier,
         update_candidates_every=20,
         candidate_min_time_diff=4,
         verbose=True,
     )
 
-    # for i in range(100):
-    #     predicted_gesture = detector.get_prediction(landmarks, hand_position[0])
-    #     print(f'Predicted gesture: {predicted_gesture}')
+    prefix = 'data/DHG2016/gesture_7/finger_2/subject_3/essai_2/'
+    # Input data, each row corresponds to a time point
+    data = np.loadtxt(f'{prefix}skeleton_world.txt')
+
+    landmarks = data.reshape((data.shape[0], 22, 3))
+
+    img_landmarks = remove_palm_center(landmarks)
+    world_landmarks = recenter_landmarks(img_landmarks)
+    world_landmarks = world_landmarks.reshape((world_landmarks.shape[0], 63))
+
+    for i in range(len(data)):
+        hand_position = hands_spacial_position(img_landmarks[i])
+        predicted_gesture = detector.get_prediction(world_landmarks[i], hand_position[0])
+        if predicted_gesture is not None:
+            print(f'\nPredicted gesture: {predicted_gesture}\n')
+
+    print('------------------')
+
+    for i in range(30):
+        hand_position = hands_spacial_position(img_landmarks[-1])
+        predicted_gesture = detector.get_prediction(world_landmarks[-1], hand_position[0])
+
