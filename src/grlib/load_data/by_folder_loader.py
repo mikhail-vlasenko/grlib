@@ -3,7 +3,9 @@ from typing import List
 
 import numpy as np
 import pandas as pd
+from natsort import natsorted
 
+from ..feature_extraction.mediapipe_landmarks import hands_spacial_position
 from ..feature_extraction.pipeline import Pipeline
 from ..load_data.base_loader import BaseLoader
 
@@ -23,7 +25,7 @@ class ByFolderLoader(BaseLoader):
         """
         super().__init__(pipeline, path, verbose)
 
-    def create_landmarks(self, output_file='landmarks.csv'):
+    def create_landmarks(self, output_file='landmarks.csv', save_positions=False):
         """
         Processes images of gestures and saves results to csv.
         Images are labelled with their folder's name.
@@ -35,6 +37,7 @@ class ByFolderLoader(BaseLoader):
         landmarks: List[np.ndarray] = []
         handednesses: List[np.ndarray] = []
         labels: List[str] = []
+        positions = []
 
         data_labels = [folder for folder in os.listdir(self.path) if os.path.isdir(self.path + folder)]
 
@@ -44,9 +47,15 @@ class ByFolderLoader(BaseLoader):
 
             files = [curr_path + file for file in os.listdir(curr_path)]
 
+            files = natsorted(files)
+
             results: List[(np.ndarray, np.ndarray)] = []
             for file_idx, file in enumerate(files):
                 results.append(self.create_landmarks_for_image(file))
+                if save_positions:
+                    relative_landmarks, _ = self.create_landmarks_for_image(file, world_landmarks=False)
+                    if len(relative_landmarks) != 0:
+                        positions.append(hands_spacial_position(relative_landmarks).flatten())
 
             if self.verbose:
                 print()
@@ -61,3 +70,5 @@ class ByFolderLoader(BaseLoader):
 
         df = BaseLoader.make_df_with_handedness(np.array(landmarks), np.array(handednesses), np.array(labels))
         df.to_csv(self.path + output_file, index=False)
+        pos_df = pd.DataFrame(positions)
+        pos_df.to_csv(self.path + 'positions.csv', index=False)

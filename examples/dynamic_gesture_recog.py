@@ -35,7 +35,7 @@ if __name__ == '__main__':
         pipeline, '../data/dynamic_dataset', trajectory_zero_precision=ZERO_PRECISION, key_frames=3
     )
     # this can be commented out after the first run
-    loader.create_landmarks()
+    # loader.create_landmarks()
 
     # read the landmarks, handedness and trajectories from the csv files
     landmarks = loader.load_landmarks()
@@ -69,7 +69,7 @@ if __name__ == '__main__':
     fp_filter = FalsePositiveFilter(fp_data, 'cosine', confidence=-1)
 
     # when running the camera, more hands may be in the frame, so we want to detect all of them
-    run_pipeline = Pipeline(4)
+    run_pipeline = Pipeline(1)
     run_pipeline.add_stage(0, 0)
 
     # initialize the dynamic gesture detector
@@ -77,27 +77,32 @@ if __name__ == '__main__':
         start_detection_model,
         start_pos_confidence=0.25,
         trajectory_classifier=trajectory_classifier,
-        update_candidates_every=5,
+        update_candidates_every=10,
         candidate_zero_precision=ZERO_PRECISION,
         end_shape_detection_model=end_detection_model,
         end_pos_confidence=0.25,
-        verbose=True,
+        verbose=False,
     )
 
     # initialize the camera
-    camera = cv.VideoCapture(0)
+    # camera = cv.VideoCapture(0)
+    landmark_df = pd.read_csv('../data/dynamic_dataset_online/landmarks.csv')
+    position_df = pd.read_csv('../data/dynamic_dataset_online/positions.csv')
+
+    labels = landmark_df['label']
+    sequence_start = 0
+    for i in range(len(labels)):
+        if labels[i] == 'sequence2':
+            sequence_start = i
+
     font = cv.FONT_HERSHEY_SIMPLEX
     frame_cnt = 0
     last_pred = 0
     predicted_gesture = ""
     # continuously read frames from the camera
-    while True:
+    for i in range(sequence_start, len(landmark_df)):
         # get the frame from the camera
-        ret, frame = camera.read()
-        if not ret:
-            continue
-        if cv.waitKey(1) & 0xFF == ord('q'):
-            break
+        # ret, frame = camera.read()
 
         # useful to know relative time
         frame_cnt += 1
@@ -106,12 +111,10 @@ if __name__ == '__main__':
                 predicted_gesture = ""
 
             # Extract hand information
-            landmarks, handedness = run_pipeline.get_world_landmarks_from_image(frame)
-            relative_landmarks, _ = run_pipeline.get_landmarks_from_image(frame)
-            hand_position = hands_spacial_position(relative_landmarks)
-
-            # optimize the pipeline to improve subsequent calls
-            run_pipeline.optimize()
+            # print(landmarks.iloc[i])
+            landmarks = np.array(landmark_df.iloc[i])[:-2]
+            handedness = np.array([1])
+            hand_position = np.array([position_df.iloc[i]])
 
             # get index of the best hand
             indices = fp_filter.best_hands_indices_silent(landmarks, handedness)
@@ -133,25 +136,18 @@ if __name__ == '__main__':
                 if prediction is not None:
                     # to display the prediction
                     predicted_gesture = prediction
+                    print(f'Prediction: {predicted_gesture} at frame {frame_cnt}')
                     last_pred = frame_cnt
                     # clean the current candidates because the gesture is found
                     detector.clear_candidates()
-
-                cv.putText(frame, f'Possible: {possible}',
-                           (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
             else:
                 # update candidates even if no valid hand shape is detected
                 # use the first hand for position
                 # todo: can use semi-handtracking to get the correct hand
                 #  (just the closest position to the last known)
                 detector.update_candidates(hand_position[0])
-                cv.putText(frame, 'Detected hands were filtered out', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
         except NoHandDetectedException as e:
             # detector.update_candidates() is not called, but the frame counter,
             # which acts a measure of time, still need to be updated
             detector.count_frame()
             # todo: clear candidates if no hand is detected for a while?
-            cv.putText(frame, 'No hand detected', (10, 450), font, 1, (0, 255, 0), 2, cv.LINE_AA)
-        finally:
-            cv.putText(frame, f'Prediction: {predicted_gesture}', (10, 500), font, 1, (0, 255, 0), 2, cv.LINE_AA)
-            cv.imshow('Frame', frame)
