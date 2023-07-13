@@ -20,7 +20,7 @@ def save_image(image: np.array, y: str, frame_set: int, image_idx: int):
 if __name__ == '__main__':
     camera = cv.VideoCapture(0)
 
-    cls = 'sequence2'
+    cls = 'sequence4'
 
     # it is necessary to differentiate between frames taken for different instances of the
     # dynamic gesture.

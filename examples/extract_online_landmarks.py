@@ -21,4 +21,4 @@ import numpy as np
 pipeline = Pipeline(1)
 pipeline.add_stage(0, 0)
 loader = ByFolderLoader(pipeline, '../data/dynamic_dataset_online')
-loader.create_landmarks(save_positions=True)
+loader.create_landmarks(save_positions=True, include_frames_without_hands=True)

@@ -25,12 +25,15 @@ class ByFolderLoader(BaseLoader):
         """
         super().__init__(pipeline, path, verbose)
 
-    def create_landmarks(self, output_file='landmarks.csv', save_positions=False):
+    def create_landmarks(self, output_file='landmarks.csv', save_positions=False, include_frames_without_hands=False):
         """
         Processes images of gestures and saves results to csv.
         Images are labelled with their folder's name.
         takes a while
         :param output_file: the file path of the file to write to
+        :param save_positions: whether to save the positions of the hands in a separate file
+        :param include_frames_without_hands: whether to include frames where no hands were detected
+            positions will be saved as -1, -1, -1, landmarks as all zeros
         :return: None
         """
 
@@ -40,6 +43,7 @@ class ByFolderLoader(BaseLoader):
         positions = []
 
         data_labels = [folder for folder in os.listdir(self.path) if os.path.isdir(self.path + folder)]
+        data_labels = natsorted(data_labels)
 
         for i, folder in enumerate(data_labels):
             curr_path = self.path + folder + '/'
@@ -56,12 +60,20 @@ class ByFolderLoader(BaseLoader):
                     relative_landmarks, _ = self.create_landmarks_for_image(file, world_landmarks=False)
                     if len(relative_landmarks) != 0:
                         positions.append(hands_spacial_position(relative_landmarks).flatten())
+                    else:
+                        positions.append(np.array([-1, -1, -1]))
 
             if self.verbose:
                 print()
 
-            # Remove the instances where no hand was detected (have empty list for landmarks)
-            results = [result for result in results if len(result[0]) > 0]
+            if not include_frames_without_hands:
+                # Remove the instances where no hand was detected (have empty list for landmarks)
+                results = [result for result in results if len(result[0]) > 0]
+            else:
+                # Replace empty list with all zeros
+                for j, result in enumerate(results):
+                    if len(result[0]) == 0:
+                        results[j] = np.zeros((21 * self.pipeline.num_hands * 3)), np.full(self.pipeline.num_hands, -1)
 
             for result in results:
                 landmarks.append(result[0])

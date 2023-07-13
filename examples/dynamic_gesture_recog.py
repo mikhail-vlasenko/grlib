@@ -1,4 +1,6 @@
 # Attempt to import grlib as a dependency, if that fails, try to assume it is a local project
+import time
+
 try:
     from grlib.exceptions import NoHandDetectedException
     from grlib.feature_extraction.mediapipe_landmarks import get_landmarks_at_position, hands_spacial_position
@@ -92,14 +94,16 @@ if __name__ == '__main__':
     labels = landmark_df['label']
     sequence_start = 0
     for i in range(len(labels)):
-        if labels[i] == 'sequence2':
+        if labels[i] == 'sequence4':
             sequence_start = i
+            break
 
     font = cv.FONT_HERSHEY_SIMPLEX
     frame_cnt = 0
     last_pred = 0
     predicted_gesture = ""
     # continuously read frames from the camera
+    t = time.time()
     for i in range(sequence_start, len(landmark_df)):
         # get the frame from the camera
         # ret, frame = camera.read()
@@ -115,6 +119,9 @@ if __name__ == '__main__':
             landmarks = np.array(landmark_df.iloc[i])[:-2]
             handedness = np.array([1])
             hand_position = np.array([position_df.iloc[i]])
+
+            if hand_position[0][0] == -1:
+                raise NoHandDetectedException
 
             # get index of the best hand
             indices = fp_filter.best_hands_indices_silent(landmarks, handedness)
@@ -151,3 +158,4 @@ if __name__ == '__main__':
             # which acts a measure of time, still need to be updated
             detector.count_frame()
             # todo: clear candidates if no hand is detected for a while?
+    print(f'Time: {time.time() - t}. for {frame_cnt} frames')
