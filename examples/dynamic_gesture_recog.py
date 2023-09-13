@@ -25,7 +25,7 @@ from sklearn.linear_model import LogisticRegression
 import cv2.cv2 as cv
 import numpy as np
 
-ZERO_PRECISION = 0.1
+ZERO_PRECISION = 0.075
 
 if __name__ == '__main__':
     num_hands = 1
@@ -46,6 +46,10 @@ if __name__ == '__main__':
     # reduce trajectories, i.e. convert [001, 000] to [001]
     x_traj = list(map(GeneralDirectionBuilder.filter_stationary, x_traj))
     x_traj = list(map(GeneralDirectionBuilder.filter_repeated, x_traj))
+    x_traj = list(map(GeneralDirectionBuilder.replace_empty, x_traj))
+
+    # print("Using these trajectories:")
+    # print(x_traj)
 
     trajectory_classifier = TrajectoryClassifier()
     trajectory_classifier.fit(x_traj, y)
@@ -77,37 +81,39 @@ if __name__ == '__main__':
     # initialize the dynamic gesture detector
     detector = DynamicDetector(
         start_detection_model,
-        start_pos_confidence=0.25,
+        start_pos_confidence=0.125,
         trajectory_classifier=trajectory_classifier,
         update_candidates_every=10,
         candidate_zero_precision=ZERO_PRECISION,
         end_shape_detection_model=end_detection_model,
-        end_pos_confidence=0.25,
+        end_pos_confidence=0.125,
         verbose=False,
     )
 
     # initialize the camera
-    # camera = cv.VideoCapture(0)
     landmark_df = pd.read_csv('../data/dynamic_dataset_online/landmarks.csv')
     position_df = pd.read_csv('../data/dynamic_dataset_online/positions.csv')
 
     labels = landmark_df['label']
-    sequence_start = 0
+    sequence_name = 'alphabetical order 1'
+    sequence_start = None
+    sequence_end = None
     for i in range(len(labels)):
-        if labels[i] == 'sequence4':
+        if labels[i] == sequence_name and sequence_start is None:
             sequence_start = i
+        elif labels[i] != sequence_name and sequence_start is not None:
+            sequence_end = i
             break
 
-    font = cv.FONT_HERSHEY_SIMPLEX
+    if sequence_end is None:
+        sequence_end = len(labels)
+
     frame_cnt = 0
     last_pred = 0
     predicted_gesture = ""
-    # continuously read frames from the camera
+    all_predictions = []
     t = time.time()
-    for i in range(sequence_start, len(landmark_df)):
-        # get the frame from the camera
-        # ret, frame = camera.read()
-
+    for i in range(sequence_start, sequence_end):
         # useful to know relative time
         frame_cnt += 1
         try:
@@ -135,7 +141,7 @@ if __name__ == '__main__':
                 # update candidates and get possible classes
                 classes = detector.update_candidates(hand_position_best)
                 if len(classes) != 0:
-                    print(f'Complete trajectory for: {classes}')
+                    # print(f'Complete trajectory for: {classes}')
                     prediction = detector.evaluate_end_shape(landmarks_best, classes)
                 else:
                     prediction = None
@@ -144,6 +150,7 @@ if __name__ == '__main__':
                     # to display the prediction
                     predicted_gesture = prediction
                     print(f'Prediction: {predicted_gesture} at frame {frame_cnt}')
+                    all_predictions.append(predicted_gesture)
                     last_pred = frame_cnt
                     # clean the current candidates because the gesture is found
                     detector.clear_candidates()
@@ -159,3 +166,4 @@ if __name__ == '__main__':
             detector.count_frame()
             # todo: clear candidates if no hand is detected for a while?
     print(f'Time: {time.time() - t}. for {frame_cnt} frames')
+    print(f'Predictions: {str(all_predictions)[1:-1]}'.replace("'", ""))

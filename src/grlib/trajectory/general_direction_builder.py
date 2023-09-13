@@ -23,7 +23,12 @@ class GeneralDirectionBuilder:
     Composes a trajectory as a sequence of Direction enum(1/0/-1) on multiple axi.
     Inspired by https://ieeexplore-ieee-org.tudelft.idm.oclc.org/stamp/stamp.jsp?tp=&arnumber=485888
     """
-    def __init__(self, zero_precision: float = 0.1, use_scaled_zero_precision: bool = True):
+    def __init__(
+            self,
+            zero_precision: float = 0.1,
+            use_scaled_zero_precision: bool = True,
+            # z_axis_zero_precision: float = None
+    ):
         """
 
         :param zero_precision: how much is considered "no movement on the axis"
@@ -32,6 +37,9 @@ class GeneralDirectionBuilder:
         This mitigates the problem of the zero precision being too small for fast movements.
         """
         self.zero_precision = zero_precision
+        # if z_axis_zero_precision is None:
+        #     # MediaPipe doesnt seem to be too sensitive to z axis movement (depth)
+        #     self.z_axis_zero_precision = self.zero_precision / 2
         self.use_scaled_zero_precision = use_scaled_zero_precision
 
     def make_trajectory(
@@ -116,6 +124,17 @@ class GeneralDirectionBuilder:
             if not np.array_equal(direction, zeros):
                 filtered.append(direction)
         return np.array(filtered)
+
+    @staticmethod
+    def replace_empty(trajectory: np.ndarray) -> np.ndarray:
+        """
+        Replaces empty trajectories with a single stationary direction.
+        :param trajectory:
+        :return:
+        """
+        if len(trajectory) == 0:
+            return np.array([[0, 0, 0]])
+        return trajectory
 
     @staticmethod
     def from_flat(flat: np.ndarray) -> np.ndarray:
