@@ -1,6 +1,8 @@
 # Attempt to import grlib as a dependency, if that fails, try to assume it is a local project
 import time
 
+from src.grlib.utils.plot_trajectory import plot_trajectory
+
 try:
     from grlib.exceptions import NoHandDetectedException
     from grlib.feature_extraction.mediapipe_landmarks import get_landmarks_at_position, hands_spacial_position
@@ -25,7 +27,7 @@ from sklearn.linear_model import LogisticRegression
 import cv2.cv2 as cv
 import numpy as np
 
-ZERO_PRECISION = 0.075
+ZERO_PRECISION = 0.1
 
 if __name__ == '__main__':
     num_hands = 1
@@ -42,6 +44,20 @@ if __name__ == '__main__':
     # read the landmarks, handedness and trajectories from the csv files
     landmarks = loader.load_landmarks()
     x_traj, y = loader.load_trajectories()
+
+    # Filter out landmarks and trajectories with label 'backward' or 'forward'
+    landmarks = landmarks[~landmarks['label'].isin(['backward', 'forward'])]
+    mask = ~(np.isin(y, ['backward', 'forward']))
+    x_traj = np.array(x_traj)[mask].tolist()
+    y = y[mask]
+
+    # # Get the first n entries for each label in the landmarks
+    # n = 3
+    # landmarks = landmarks.groupby('label').head(n).reset_index(drop=True)
+    # labels_df = pd.DataFrame({'label': y})
+    # indices_first3 = labels_df.groupby('label').head(n).index.values
+    # x_traj = np.array(x_traj)[indices_first3].tolist()
+    # y = y[indices_first3]
 
     # reduce trajectories, i.e. convert [001, 000] to [001]
     x_traj = list(map(GeneralDirectionBuilder.filter_stationary, x_traj))
@@ -95,7 +111,9 @@ if __name__ == '__main__':
     position_df = pd.read_csv('../data/dynamic_dataset_online/positions.csv')
 
     labels = landmark_df['label']
-    sequence_name = 'alphabetical order 1'
+    POSSIBLE_SEQUENCES = ['triple simple gestures', 'flowing sequence', 'flowing sequence 2',
+                          'circle infinity', 'alphabetical order 1']
+    sequence_name = POSSIBLE_SEQUENCES[2]
     sequence_start = None
     sequence_end = None
     for i in range(len(labels)):
@@ -107,6 +125,9 @@ if __name__ == '__main__':
 
     if sequence_end is None:
         sequence_end = len(labels)
+
+    # plot_trajectory(position_df.iloc[sequence_start:sequence_end].copy())
+    # exit()
 
     frame_cnt = 0
     last_pred = 0
@@ -166,4 +187,4 @@ if __name__ == '__main__':
             detector.count_frame()
             # todo: clear candidates if no hand is detected for a while?
     print(f'Time: {time.time() - t}. for {frame_cnt} frames')
-    print(f'Predictions: {str(all_predictions)[1:-1]}'.replace("'", ""))
+    print(f'Predictions for {sequence_name}: {str(all_predictions)[1:-1]}'.replace("'", ""))
