@@ -48,7 +48,7 @@ if __name__ == '__main__':
     # Filter out landmarks and trajectories with label 'backward' or 'forward'
     landmarks = landmarks[~landmarks['label'].isin(['backward', 'forward'])]
     mask = ~(np.isin(y, ['backward', 'forward']))
-    x_traj = np.array(x_traj)[mask].tolist()
+    x_traj = np.array(x_traj)[mask]
     y = y[mask]
 
     # # Get the first n entries for each label in the landmarks
@@ -59,10 +59,10 @@ if __name__ == '__main__':
     # x_traj = np.array(x_traj)[indices_first3].tolist()
     # y = y[indices_first3]
 
-    # reduce trajectories, i.e. convert [001, 000] to [001]
-    x_traj = list(map(GeneralDirectionBuilder.filter_stationary, x_traj))
-    x_traj = list(map(GeneralDirectionBuilder.filter_repeated, x_traj))
-    x_traj = list(map(GeneralDirectionBuilder.replace_empty, x_traj))
+    # # reduce trajectories, i.e. convert [001, 000] to [001]
+    # x_traj = list(map(GeneralDirectionBuilder.filter_stationary, x_traj))
+    # x_traj = list(map(GeneralDirectionBuilder.filter_repeated, x_traj))
+    # x_traj = list(map(GeneralDirectionBuilder.replace_empty, x_traj))
 
     # print("Using these trajectories:")
     # print(x_traj)
@@ -112,8 +112,8 @@ if __name__ == '__main__':
 
     labels = landmark_df['label']
     POSSIBLE_SEQUENCES = ['triple simple gestures', 'flowing sequence', 'flowing sequence 2',
-                          'circle infinity', 'alphabetical order 1']
-    sequence_name = POSSIBLE_SEQUENCES[2]
+                          'circle infinity', 'alphabetical order 1', 'alphabetical order 2', 'alphabetical order 3']
+    sequence_name = POSSIBLE_SEQUENCES[6]
     sequence_start = None
     sequence_end = None
     for i in range(len(labels)):
