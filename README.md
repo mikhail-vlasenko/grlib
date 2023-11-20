@@ -1,5 +1,5 @@
-# GRLib: An Open-Source Hand Gesture Detection and Recognition Python Library
-This repository houses the GRLib, a Python library for hand gesture detection and recognition. GRLib is capable of identifying both static and dynamic hand gestures using a combination of image augmentations, MediaPipe Hands and other algorithms.
+# [GRLib](https://arxiv.org/abs/2310.14919): An Open-Source Hand Gesture Detection and Recognition Python Library
+This repository houses GRLib, a Python library for hand gesture detection and recognition. GRLib is capable of identifying both static and dynamic hand gestures using a combination of image augmentations, MediaPipe Hands and other algorithms.
 
 ## Installation
 `pip install grlib`
@@ -15,7 +15,7 @@ Detailed instructions and examples are included in the script headers.
  * `src/grlib/dynamic_detector.py`: The class for dynamic gesture recognition.
 
 ## Sample results
-Using this library, the authors produce the following results in comparison to [MediaPipe Solution](https://github.com/google/mediapipe/blob/master/docs/solutions/hands.md):
+Using this library, the authors produce the following results in comparison to [MediaPipe Solutions](https://github.com/google/mediapipe/blob/master/docs/solutions/hands.md):
 
 ASL            |  HaGRID | Kenyan sign language
 :-------------------------:|:-------------------------:|:-------------------------:
